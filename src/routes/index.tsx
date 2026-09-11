@@ -186,7 +186,7 @@ function LandingPage() {
         <nav className="flex items-center gap-3 text-sm font-semibold sm:gap-6" aria-label="Site navigation">
           <Link
             to="/app"
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-white shadow-[0_4px_12px_rgba(16,20,28,0.14)] transition-transform hover:-translate-y-0.5"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-white shadow-[0_4px_12px_rgba(16,20,28,0.14)] transition-transform hover:-translate-y-0.5"
           >
             {isAuthenticated ? "Go to Dashboard" : "Start xGoal"} <ArrowUpRightIcon className="size-4" />
           </Link>
@@ -211,7 +211,7 @@ function LandingPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 to="/app"
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white shadow-[0_5px_18px_rgba(16,20,28,0.18)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-xl bg-blue px-5 py-3 text-sm font-bold text-white shadow-[0_5px_18px_rgba(16,20,28,0.18)] transition-transform hover:-translate-y-0.5"
               >
                 Create your first goal <ArrowUpRightIcon />
               </Link>

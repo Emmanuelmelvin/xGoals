@@ -46,7 +46,7 @@ function AuthCallbackPage() {
         {error ? (
           <a
             href="/app/"
-            className="mt-7 inline-flex min-h-11 items-center rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white"
+            className="mt-7 inline-flex min-h-11 items-center rounded-xl bg-blue px-5 py-3 text-sm font-bold text-white"
           >
             Back to sign in
           </a>

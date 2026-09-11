@@ -37,22 +37,22 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         </Tooltip>
         <nav className="mt-8 flex flex-col items-center gap-1" aria-label="Main navigation">
           <Tooltip label="Overview" placement="right">
-            <Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+            <Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <GridIcon />
             </Link>
           </Tooltip>
           <Tooltip label="Goals" placement="right">
-            <Link to="/app/goals" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+            <Link to="/app/goals" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <GoalIcon />
             </Link>
           </Tooltip>
           <Tooltip label="Workflows" placement="right">
-            <Link to="/app/workflows" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+            <Link to="/app/workflows" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <WorkflowIcon />
             </Link>
           </Tooltip>
           <Tooltip label="Credits — usage tracking coming soon" placement="right">
-            <Link to="/app/credits" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+            <Link to="/app/credits" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <CreditIcon />
             </Link>
           </Tooltip>
@@ -87,7 +87,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           to="/app"
           search={search}
           activeOptions={{ exact: true }}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
           inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
         >
           <GridIcon />
@@ -97,7 +97,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         <Link
           to="/app/goals"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
           inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
         >
           <GoalIcon />
@@ -107,7 +107,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         <Link
           to="/app/workflows"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
           inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
         >
           <WorkflowIcon />
@@ -117,7 +117,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         <Link
           to="/app/credits"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
           inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
         >
           <CreditIcon />
@@ -128,7 +128,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         </Link>
       </nav>
 
-      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
+      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
         <PlusIcon />New goal
       </button>
 

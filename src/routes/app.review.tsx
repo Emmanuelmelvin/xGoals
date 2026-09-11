@@ -124,7 +124,7 @@ function NewGoalPage() {
               type="submit"
               disabled={!canSubmit}
               aria-busy={isAnalyzing}
-              className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isAnalyzing ? "Analyzing…" : "Analyze goal"}
               <span aria-hidden="true">↗</span>
@@ -240,7 +240,7 @@ function GoalReviewPage({ goalId }: { goalId: string }) {
             {loadError ?? "That goal draft could not be loaded."}
           </p>
           <section className="mt-6 flex gap-2">
-            <Link to="/app/review" className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
+            <Link to="/app/review" className="rounded-xl bg-blue px-4 py-2 text-sm font-bold text-white">
               Start a new goal
             </Link>
             <Link to="/app/goals" className="rounded-xl px-4 py-2 text-sm font-semibold text-muted hover:bg-wash hover:text-ink">
@@ -315,7 +315,7 @@ function GoalReviewPage({ goalId }: { goalId: string }) {
               type="button"
               onClick={() => void handleSave("deploy")}
               disabled={isSaving || !canDeploy}
-              className="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+              className="rounded-xl bg-blue px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               Create & deploy
             </button>
