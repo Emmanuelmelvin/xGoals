@@ -1,8 +1,2 @@
 allowBuilds:
-  '@astryxdesign/cli': true
-  '@astryxdesign/core': true
   esbuild: true
-minimumReleaseAgeExclude:
-  - '@astryxdesign/cli@0.6.0'
-  - '@astryxdesign/core@0.6.0'
-  - '@astryxdesign/theme-neutral@0.6.0'

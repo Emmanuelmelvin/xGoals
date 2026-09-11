@@ -2,32 +2,38 @@
 
 Project-specific guidance for AI coding agents.
 
-<!-- ASTRYX:START -->
-Astryx v0.6.0 · 163 components
-CLI: run every command as `pnpm exec astryx <cmd>` (shown below as `astryx ...`).
+## Frontend direction
 
-SETUP (once, in your app entry e.g. main.tsx) — without these, components render unstyled:
-  import "@astryxdesign/core/reset.css";
-  import "@astryxdesign/core/astryx.css";
+- Use Tailwind CSS v4 directly with the Vite plugin.
+- Keep the visual language calm, spacious, expressive, and product-led.
+- Follow the XGoals palette: ink black, soft grey, electric blue, and white.
+- Use semantic HTML and Tailwind utilities for layout, responsive behavior, and states.
+- Prefer a small number of strong compositions over repeated card grids.
+- The marketing homepage should feel like a brand page, not an admin dashboard.
+- Use large type, generous whitespace, restrained borders, rounded product previews, and clear calls to action.
+- Keep motion subtle and respect `prefers-reduced-motion`.
+- Do not reintroduce a UI component framework for the frontend.
 
-WORKFLOW — discover, don't guess. Before writing UI:
-1. `astryx build "<idea>"` — START HERE: returns a kit (closest [page] + [block]s + [component]s). No args = full playbook.
-2. `astryx template <name> [--skeleton]` — scaffold the [page]/[block]s it named, or study their layout. Templates are reference code.
-3. `astryx component <Name>` — props + examples for every component you use.
+## Product principles
 
-RULES:
-- No <div> — components do all layout/spacing, page frame included.
-- Frame first: read `astryx docs layout` before writing any page or screen — page frame, region widths, breakpoint behavior.
-- Dense data = rows (Table, List/Item), never Card-wrapped list items; Card is for standalone widgets. Status = StatusDot/Token; Badge = counts only.
-- Custom styling: component props first; else Tailwind utilities backed by tokens (bg-surface, text-primary, rounded-lg) via tailwind-theme.css. No raw hex/px.
-- Tokens for every value (`astryx docs tokens`). Brand/accent belongs in the theme (`astryx theme list` / `theme add <slug>`, or `astryx theme template` for a custom one) — never override --color-* in :root.
-- SELF-CHECK before you finish: re-read the file and replace any style={{…}}, raw <div>/<span> layout, imported .css/@apply, or hardcoded/arbitrary value (e.g. bg-[#fff], p-[13px]) with the component or a token-backed utility. If unsure a component/prop exists, run `astryx component <Name>` / `astryx search "<thing>"`; don't hand-roll CSS.
+- The goal is the primary object.
+- The user defines the outcome in plain English.
+- The agent decides what work is useful.
+- Drafts come before publishing.
+- The user must approve every post before it reaches X.
+- Keep user control, authenticity, relevance, originality, and privacy visible in the interface.
 
-MORE CLI:
-  search "<query>"   find any component / hook / doc / template / block
-  component --list   163 components by category
-  template --list    page + block recipes
-  docs <topic>       browser-support, cli-integrations, color, elevation, getting-started, icons, illustrations, internationalization, layout, migration, motion, principles, shadcn-compatibility, shape, spacing, styling-libraries, styling, theme, tokens, typography, working-with-ai
-  swizzle <Name>     eject component source for deep customization
-  upgrade --apply    run after any Astryx or integration dependency bump
-<!-- ASTRYX:END -->
+## Server boundary
+
+- Do not add authentication, database access, X API calls, agent service calls, or publishing behavior while working on the static frontend unless explicitly requested.
+- Keep the current `/app` page as a frontend placeholder until server work is requested.
+- Never expose credentials or access tokens in browser code.
+
+## Verification
+
+Run these checks before finishing frontend work:
+
+```sh
+pnpm typecheck
+pnpm build
+```

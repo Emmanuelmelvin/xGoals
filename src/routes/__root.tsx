@@ -4,8 +4,6 @@ import {
   Scripts,
   createRootRoute,
 } from "@tanstack/react-router";
-import { Theme } from "@astryxdesign/core/theme";
-import { neutralTheme } from "@astryxdesign/theme-neutral/built";
 import "../styles.css";
 
 export const Route = createRootRoute({
@@ -30,9 +28,7 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body>
-        <Theme theme={neutralTheme}>
-          <Outlet />
-        </Theme>
+        <Outlet />
         <Scripts />
       </body>
     </html>

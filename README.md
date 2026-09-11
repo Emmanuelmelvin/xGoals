@@ -66,7 +66,7 @@ X API
 ## Tech stack
 
 - Frontend and application backend: TanStack Start, React, and TypeScript
-- Styling: Tailwind CSS and Astryx Design components
+- Styling: Tailwind CSS v4
 - Persistence and authentication: Supabase Auth and Supabase Postgres
 - Agent runtime: a separate service using the configured LLM/agent infrastructure
 - Social platform: X OAuth 2.0 and X API
