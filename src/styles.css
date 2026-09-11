@@ -79,39 +79,10 @@
   }
 }
 
-main > aside[aria-label="Workspace navigation"] {
-  left: 0;
-  align-self: flex-start;
-}
-
 @media (max-width: 1023px) {
   main > section > header:first-child,
   main > section > section > header:first-child {
     padding-right: 5rem;
-  }
-
-  main > aside[aria-label="Workspace navigation"] {
-    position: sticky !important;
-    top: 0 !important;
-    left: 0 !important;
-    bottom: auto !important;
-    align-self: flex-start;
-    z-index: auto !important;
-    width: 0;
-    padding: 0;
-    overflow: hidden;
-    border-right: 0;
-    transform: none !important;
-  }
-
-  main > aside[aria-label="Workspace navigation"][class*="translate-x-0"]:not([class*="-translate-x-full"]) {
-    width: 18rem;
-    padding: 1.25rem;
-    border-right: 1px solid var(--color-line);
-  }
-
-  main > button.fixed.inset-0 {
-    display: none;
   }
 }
 
