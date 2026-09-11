@@ -9,7 +9,7 @@ import "../styles.css";
 export const Route = createRootRoute({
   head: () => ({
     meta: [
-      { title: "XGoals — A clearer way to show up on X." },
+      { title: "xGoals — A clearer way to show up on X." },
       {
         name: "description",
         content:
