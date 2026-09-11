@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { XGoalMark } from "./logo";
 import { createClient } from "../lib/supabase/client";
 import { analyzeGoal } from "../lib/ai/agent-server-fns";
+import { useToast } from "./toast";
 
 export type DrawerState = "open" | "closed";
 export type GoalStatus = "active" | "draft" | "paused" | "completed";
@@ -196,6 +197,7 @@ function UserAvatar({ user }: { user: UserSummary }) {
 function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?: DrawerState; children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const drawerOpen = drawer !== "closed";
   const [filter, setFilter] = useState<GoalFilter>("all");
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -264,6 +266,7 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
     setNewGoalPrompt("");
     setIsAnalyzing(false);
     setIsCreating(false);
+    toast.success("Goal created", { description: permissionsErrorMessage ? "The goal is ready, but one permission needs your review." : "Your new foundation is ready to shape." });
   }
   async function signOut() { await createClient().auth.signOut(); }
 

@@ -5,6 +5,7 @@ import {
   createRootRoute,
 } from "@tanstack/react-router";
 import "../styles.css";
+import { ToastProvider } from "../components/toast";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -28,7 +29,9 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body>
-        <Outlet />
+        <ToastProvider>
+          <Outlet />
+        </ToastProvider>
         <Scripts />
       </body>
     </html>
