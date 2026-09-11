@@ -67,6 +67,13 @@
   }
 }
 
+@media (max-width: 1023px) {
+  main > section > header:first-child,
+  main > section > section > header:first-child {
+    padding-right: 5rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
