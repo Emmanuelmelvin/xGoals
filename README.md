@@ -1,176 +1,129 @@
 # XGoals
 
-A goal-driven AI agent that helps users maintain consistent presence on X within their niche.
+Set a goal. Deploy an agent. Stay active in your niche.
 
-## Overview
+XGoals is a goal-driven AI content workspace for people who want to build a consistent, useful presence on X. Instead of asking for isolated posts, users describe an outcome in plain English. The agent then discovers relevant ideas, prepares drafts, suggests conversations, and tracks progress toward that goal.
 
-XGoals is an AI-powered content workspace where users define goals in plain English, and an agent works toward those goals by discovering relevant ideas, preparing post drafts, suggesting conversations, and tracking progress—all presented in a dashboard for review.
+The user remains in control. Every post is reviewed and approved before it is published.
 
-The user remains in control of publishing. The agent prepares the work; the user refines and approves it.
+## Why XGoals
 
-**Core product statement:**
+XGoals is not a generic tweet generator, social media scheduler, or autonomous posting bot. The goal is the primary object: the user defines the outcome, and the agent chooses the next useful action.
 
-> Set a goal. Deploy an agent. Stay active in your niche.
+The product is being developed around these principles:
 
-This is not a generic tweet generator, social media scheduler, or autonomous posting bot. It is a goal-driven content workspace powered by an AI agent.
+- Quality and authenticity over volume
+- Drafts before publishing
+- Transparent agent reasoning and progress
+- Least-privilege access to X
+- No fabricated personal experiences or unsupported claims
+- The user always controls publication
 
-## Features
+## MVP workflow
 
-- **Goal-centric workflow**: Define objectives in plain English with duration and success conditions
-- **AI-powered agent**: Discovers relevant content, generates drafts, suggests conversations
-- **Draft-first publishing**: User reviews and approves all content before publishing
-- **X integration**: OAuth authentication and publishing via X API
-- **Goal tracking**: Monitor progress against success conditions
-- **Credits-based billing**: Pay-as-you-go model mapped to X API usage
+1. Sign in with X.
+2. Share your niche, audience, expertise, and writing preferences.
+3. Describe a goal in plain English.
+4. Set its duration and success conditions.
+5. Deploy the goal.
+6. Review drafts and conversation suggestions in the dashboard.
+7. Edit and approve content before publishing it to X.
+8. Track progress until the goal is completed, paused, or cancelled.
 
-## Tech Stack
+## Planned capabilities
 
-- **Frontend/Backend**: TanStack Start
-- **Database**: Supabase PostgreSQL
-- **Auth**: Supabase Auth (X OAuth) + Better Auth (email)
-- **Agent Framework**: Strands Agents SDK
-- **Agent Runtime**: AWS AgentCore
-- **LLM**: Amazon Bedrock (Claude, Llama)
-- **X Integration**: X MCP (Model Context Protocol)
-- **ORM**: Drizzle
-- **Styling**: Tailwind v4
+- Goal creation with structured success conditions
+- Goal-centric dashboard and progress tracking
+- Agent-generated original insights, technical explanations, and build-in-public updates
+- Suggested replies and relevant conversations
+- Draft review, editing, regeneration, rejection, and archiving
+- Manual approval before publishing to X
+- Activity history and goal completion summaries
+- Pause, resume, and cancel controls
 
-## Local Setup
-
-Requires Node.js 22.12+ and pnpm.
-
-1. Run `pnpm install`.
-2. Copy `.env.example` to `.env` and configure:
-   - `DATABASE_URL` - Supabase PostgreSQL connection string
-   - `SUPABASE_URL` - Your Supabase project URL
-   - `SUPABASE_ANON_KEY` - Supabase anonymous key
-   - `SUPABASE_SERVICE_KEY` - Supabase service role key
-   - `BETTER_AUTH_SECRET` - Generate with `openssl rand -hex 32`
-   - `BETTER_AUTH_URL` - Your app URL (e.g., `http://localhost:3000`)
-   - `X_CLIENT_ID` - X API client ID
-   - `X_CLIENT_SECRET` - X API client secret
-   - `AWS_REGION` - AWS region for AgentCore/Bedrock
-   - `AWS_ACCESS_KEY_ID` - AWS access key
-   - `AWS_SECRET_ACCESS_KEY` - AWS secret key
-3. Run `pnpm db:migrate` to apply database migrations.
-4. Run `pnpm dev` and open http://localhost:3000.
+The repository is in early development. Some integrations described here—especially Supabase persistence, X OAuth/API access, and the separate agent service—are being built alongside the initial web experience.
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   USER BROWSER                        │
-│  TanStack Start Frontend (React)                     │
-└─────────────────────┬────────────────────────────────┘
-                      │
-        ┌─────────────┴─────────────┐
-        ▼                           ▼
-┌───────────────┐          ┌─────────────────┐
-│   SUPABASE    │          │   AGENTCORE     │
-│               │          │                 │
-│ - PostgreSQL  │          │ - Strands Agent │
-│ - Auth        │          │ - X MCP         │
-│ - Realtime    │          │ - Bedrock       │
-│ - Storage     │          │                 │
-└───────┬───────┘          └────────┬────────┘
-        │                           │
-        └───────────┬───────────────┘
-                    ▼
-            ┌──────────────┐
-            │   X API      │
-            │              │
-            │ - OAuth      │
-            │ - Publishing │
-            └──────────────┘
+The TanStack Start application is the user-facing frontend and backend. The agent runs as a separate service and communicates through persistent jobs and results in Supabase.
+
+```text
+User
+  |
+  v
+TanStack Start application
+  |  goals, dashboard, drafts, approval, publishing
+  v
+Supabase
+  |  auth, PostgreSQL, row-level security, job state
+  v
+Separate agent service
+  |  planning, research, draft generation, progress evaluation
+  v
+X API
 ```
 
-## User Flow
+## Tech stack
 
-1. **Sign in** - X OAuth or email (Better Auth)
-2. **Onboard** - Provide niche, style preferences, example posts
-3. **Create goal** - Define objective in plain English
-4. **Deploy** - Agent begins working toward goal
-5. **Review drafts** - Dashboard shows agent output
-6. **Approve & publish** - User controls what goes to X
-7. **Track progress** - Monitor success conditions
+- Frontend and application backend: TanStack Start, React, and TypeScript
+- Styling: Tailwind CSS and Astryx Design components
+- Persistence and authentication: Supabase Auth and Supabase Postgres
+- Agent runtime: a separate service using the configured LLM/agent infrastructure
+- Social platform: X OAuth 2.0 and X API
+- Database access: Drizzle, where used by the application layer
 
-## Authentication
+The agent and X credentials must remain server-side. Access tokens should be encrypted or protected with an equivalent secret-management approach.
 
-XGoals supports two authentication methods:
+## Local setup
 
-- **X OAuth**: Full access to X content and publishing capabilities
-- **Email (Better Auth)**: Read-only access for users who want to browse without X connection
+Requirements:
 
-Both methods use Supabase for session management and row-level security.
+- Node.js 22.12 or newer
+- pnpm
 
-## Credits System
-
-XGoals uses a credits-based billing model:
-
-- Purchase credits upfront
-- Credits map to X API usage + AWS/LLM costs
-- Pay only for what you use
-- No surprise bills
-
-## Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run database migrations
-pnpm db:migrate
-
-# Start development server
-pnpm dev
-
-# Type check
-pnpm typecheck
-
-# Run tests
-pnpm test
-
-# Build for production
-pnpm build
-```
-
-## Project Structure
-
-```
-src/
-├── routes/              # TanStack Router file-based routes
-│   ├── api.*.ts        # API endpoints
-│   ├── app.tsx         # App layout
-│   └── app.*.tsx       # App pages
-├── server/
-│   ├── db/
-│   │   ├── schema.ts   # Drizzle schema
-│   │   └── client.ts   # Database client
-│   ├── auth.ts         # Auth configuration
-│   ├── x-api.ts        # X API client
-│   └── agentcore.ts    # AgentCore client
-├── lib/
-│   ├── contracts.ts    # Zod validation schemas
-│   └── app-state.tsx   # Global state
-├── components/
-│   ├── app/            # App-specific components
-│   └── ui/             # Reusable UI components
-└── types/
-    └── app.ts          # Shared TypeScript types
-```
-
-## Verification
+Install dependencies and start the development server:
 
 ```sh
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm install
+pnpm dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+When environment configuration and database migrations are available, copy `.env.example` to `.env` and fill in the required values. Never commit credentials, OAuth client secrets, access tokens, or service keys.
+
+## Development commands
+
+```sh
+pnpm dev        # Start the Vite development server
+pnpm typecheck  # Run TypeScript checks
+pnpm build      # Build the application
+pnpm start      # Serve the production build
+```
+
+## Project structure
+
+```text
+src/
+├── routes/       # TanStack Router routes and application pages
+├── components/   # Reusable and product-specific UI components
+├── server/       # Server-only integrations and persistence (as implemented)
+├── lib/          # Shared contracts and application utilities
+└── types/        # Shared TypeScript types
+```
+
+## Security and user control
+
+XGoals must never publish content without explicit authorization. Draft generation, approval, and publication are separate states. User content, preferences, credentials, and drafts should be protected with server-side authorization and row-level security.
+
+If you discover a security vulnerability, do not open a public issue with exploit details. Contact Emmanuel Chidi privately through the repository owner’s GitHub profile so the issue can be handled responsibly.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request and follow the [Code of Conduct](CODE_OF_CONDUCT.md) in project spaces.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md) before opening an issue or pull request.
 
 ## License
 
-XGoals isfree software licensed under the GNU Affero General Public License version 3 (AGPL-3.0-only), SPDX identifier `AGPL-3.0-only`. If you run a modified version over a network, section 13 requires offering its corresponding source to users who interact with it remotely. See [LICENSE](LICENSE) for details.
+XGoals is free software licensed under the [GNU Affero General Public License version 3](LICENSE), SPDX identifier `AGPL-3.0-only`.
+
+Copyright © 2026 Emmanuel Chidi.
