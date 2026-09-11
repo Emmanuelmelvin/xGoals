@@ -1,5 +1,10 @@
 .PHONY: start stop stop-agent ollama agent model health install
 
+# The recipes invoke PowerShell. Force GNU Make to use Windows cmd.exe so a
+# Git Bash shell does not expand PowerShell variables such as $$provider.
+SHELL := cmd.exe
+.SHELLFLAGS := /C
+
 PYTHON := .venv\Scripts\python.exe
 PROVIDER ?= ollama
 MODEL ?= llama3.2:1b
