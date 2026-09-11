@@ -22,6 +22,8 @@ logger = logging.getLogger("xgoal.agent")
 
 
 PermissionDecision = Literal["review"]
+TimeSpanUnit = Literal["days", "weeks", "months", "ongoing"]
+RunCadence = Literal["once", "daily", "weekly", "monthly", "custom"]
 
 ALLOWED_PERMISSIONS = {
     "profile:read",
@@ -49,13 +51,41 @@ class PermissionSuggestion(BaseModel):
     decision: PermissionDecision = "review"
 
 
+class TimeSpan(BaseModel):
+    amount: int | None = None
+    unit: TimeSpanUnit = "ongoing"
+    rationale: str = Field(default="", max_length=500)
+
+
+class RunPlan(BaseModel):
+    cadence: RunCadence = "weekly"
+    count: int | None = None
+    description: str = Field(default="", max_length=500)
+
+
+class Milestone(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(min_length=1, max_length=500)
+    success_criteria: str = Field(default="", max_length=500)
+
+
 class WorkflowSuggestion(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: str = Field(min_length=1, max_length=500)
+    trigger: str = Field(default="When the goal is ready for its next action", max_length=300)
+    actions: list[str] = Field(default_factory=list, max_length=12)
+    cadence: RunCadence = "weekly"
+    run_count: int | None = None
 
 
 class GoalAnalysis(BaseModel):
     summary: str = Field(min_length=1, max_length=1000)
+    outcome: str = Field(default="", max_length=1000)
+    time_span: TimeSpan = Field(default_factory=TimeSpan)
+    run_plan: RunPlan = Field(default_factory=RunPlan)
+    actions: list[str] = Field(default_factory=list, max_length=20)
+    landmarks: list[str] = Field(default_factory=list, max_length=20)
+    milestones: list[Milestone] = Field(default_factory=list, max_length=12)
     permissions: list[PermissionSuggestion] = Field(default_factory=list, max_length=30)
     workflow_suggestions: list[WorkflowSuggestion] = Field(default_factory=list, max_length=5)
 
@@ -149,6 +179,26 @@ def _parse_json_analysis(result) -> GoalAnalysis:
 def _fallback_json_prompt(prompt: str) -> str:
     schema = {
         "summary": "one concise sentence",
+        "outcome": "the concrete result this goal should create",
+        "time_span": {
+            "amount": 12,
+            "unit": "weeks",
+            "rationale": "why this time span fits the goal",
+        },
+        "run_plan": {
+            "cadence": "weekly",
+            "count": 12,
+            "description": "how often the work should run",
+        },
+        "actions": ["research a useful idea", "prepare a draft for review"],
+        "landmarks": ["first validated theme", "consistent publishing rhythm"],
+        "milestones": [
+            {
+                "name": "First milestone",
+                "description": "what should be true",
+                "success_criteria": "how the user can verify it",
+            }
+        ],
         "permissions": [
             {
                 "permission": "posts:read",
@@ -157,7 +207,14 @@ def _fallback_json_prompt(prompt: str) -> str:
             }
         ],
         "workflow_suggestions": [
-            {"name": "workflow name", "description": "what it does"}
+            {
+                "name": "workflow name",
+                "description": "what it does",
+                "trigger": "when it should run",
+                "actions": ["step one", "step two"],
+                "cadence": "weekly",
+                "run_count": 12,
+            }
         ],
     }
     return (
@@ -178,8 +235,11 @@ def health() -> dict[str, str]:
 @app.post("/analyze-goal", response_model=GoalAnalysis)
 def analyze_goal(request: AnalyzeGoalRequest) -> GoalAnalysis:
     prompt = (
-        "Analyze this xGoal request. Infer a concise summary, the minimum required "
-        "permissions from the allowed catalog, and useful workflow suggestions. "
+        "Analyze this xGoal request into a detailed, editable execution plan. Infer "
+        "the outcome, a realistic time span, how often the work should run, concrete "
+        "actions, landmarks, milestones with verifiable success criteria, the minimum "
+        "required permissions from the allowed catalog, and useful workflow suggestions. "
+        "Each workflow must include its trigger, actions, cadence, and run count. "
         "All permissions must remain in review.\n\n"
         f"Goal title: <goal_title>{request.title}</goal_title>\n"
         f"User prompt: <goal_prompt>{request.prompt}</goal_prompt>"

@@ -1,17 +1,49 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "../supabase/server";
 
+export type PermissionDecision = "allow" | "review" | "deny";
+
+export type GoalTimeSpan = {
+  amount: number | null;
+  unit: "days" | "weeks" | "months" | "ongoing";
+  rationale: string;
+};
+
+export type GoalRunPlan = {
+  cadence: "once" | "daily" | "weekly" | "monthly" | "custom";
+  count: number | null;
+  description: string;
+};
+
+export type GoalMilestone = {
+  name: string;
+  description: string;
+  success_criteria: string;
+};
+
+export type GoalWorkflowSuggestion = {
+  name: string;
+  description: string;
+  trigger: string;
+  actions: string[];
+  cadence: "once" | "daily" | "weekly" | "monthly" | "custom";
+  run_count: number | null;
+};
+
 export type GoalAnalysis = {
   summary: string;
+  outcome: string;
+  time_span: GoalTimeSpan;
+  run_plan: GoalRunPlan;
+  actions: string[];
+  landmarks: string[];
+  milestones: GoalMilestone[];
   permissions: Array<{
     permission: string;
     reason: string;
-    decision: "review";
+    decision: PermissionDecision;
   }>;
-  workflow_suggestions: Array<{
-    name: string;
-    description: string;
-  }>;
+  workflow_suggestions: GoalWorkflowSuggestion[];
 };
 
 type AnalyzeGoalInput = {
