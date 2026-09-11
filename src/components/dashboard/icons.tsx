@@ -40,6 +40,10 @@ export function PanelLeftIcon() {
   return <Icon><rect x="3.5" y="4" width="17" height="16" rx="2" /><path d="M8.5 4v16M14 10l-2 2 2 2" /></Icon>;
 }
 
+export function CreditIcon() {
+  return <Icon><rect x="3.5" y="6" width="17" height="13" rx="2" /><path d="M3.5 10h17M7 15h4" /></Icon>;
+}
+
 export function XIcon() {
   return <svg className="size-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.38L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.84h1.73L8.26 4.04H6.4L17.8 19.84Z" /></svg>;
 }

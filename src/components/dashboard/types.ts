@@ -29,6 +29,7 @@ export type DashboardContextValue = {
   goalError: string | null;
   filter: GoalFilter;
   setFilter: (filter: GoalFilter) => void;
+  refreshGoals: () => Promise<void>;
   openCreateGoal: () => void;
 };
 

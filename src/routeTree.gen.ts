@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppCreditsRouteImport } from './routes/app.credits'
 import { Route as AppGoalsRouteImport } from './routes/app.goals'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppReviewRouteImport } from './routes/app.review'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
@@ -33,6 +35,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCreditsRoute = AppCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
@@ -41,6 +48,11 @@ const AppGoalsRoute = AppGoalsRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AppRoute,
 } as any)
 const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
@@ -62,8 +74,10 @@ const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
@@ -71,8 +85,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
@@ -82,8 +98,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
@@ -94,8 +112,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/credits'
     | '/app/goals'
     | '/app/profile'
+    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
@@ -103,8 +123,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/credits'
     | '/app/goals'
     | '/app/profile'
+    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app'
@@ -113,8 +135,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/app/credits'
     | '/app/goals'
     | '/app/profile'
+    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
@@ -150,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/credits': {
+      id: '/app/credits'
+      path: '/credits'
+      fullPath: '/app/credits'
+      preLoaderRoute: typeof AppCreditsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/goals': {
       id: '/app/goals'
       path: '/goals'
@@ -162,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/review': {
+      id: '/app/review'
+      path: '/review'
+      fullPath: '/app/review'
+      preLoaderRoute: typeof AppReviewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/workflows': {
@@ -189,16 +227,20 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppCreditsRoute: typeof AppCreditsRoute
   AppGoalsRoute: typeof AppGoalsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppReviewRoute: typeof AppReviewRoute
   AppWorkflowsRoute: typeof AppWorkflowsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppWorkflowWorkflowIdRoute: typeof AppWorkflowWorkflowIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCreditsRoute: AppCreditsRoute,
   AppGoalsRoute: AppGoalsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppReviewRoute: AppReviewRoute,
   AppWorkflowsRoute: AppWorkflowsRoute,
   AppIndexRoute: AppIndexRoute,
   AppWorkflowWorkflowIdRoute: AppWorkflowWorkflowIdRoute,

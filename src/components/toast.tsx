@@ -105,7 +105,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return <ToastContext.Provider value={{ toast }}>
     {children}
-    <aside className="pointer-events-none fixed inset-x-4 top-4 z-50 sm:left-auto sm:right-5 sm:w-[min(24rem,calc(100vw-2.5rem))]" aria-label="Notifications">
+    <aside
+      className="pointer-events-none fixed inset-x-4 top-4 z-50 sm:left-auto sm:right-5 sm:w-[min(24rem,calc(100vw-2.5rem))]"
+      aria-label="Notifications">
       <ol className="flex flex-col gap-3">
         {items.map((item) => <ToastCard key={item.id} item={item} onDismiss={dismiss} />)}
       </ol>

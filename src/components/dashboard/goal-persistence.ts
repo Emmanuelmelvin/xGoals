@@ -35,17 +35,70 @@ export async function loadGoalsForUser(ownerId: string) {
 
 export type GoalCreationMode = "goal" | "deploy" | "schedule";
 
-export async function persistGoal({ ownerId, title, prompt, analysis, mode, scheduledFor }: { ownerId: string; title: string; prompt: string; analysis: GoalAnalysis; mode: GoalCreationMode; scheduledFor: string }) {
+export type GoalDraft = {
+  id: string;
+  title: string;
+  prompt: string;
+  analysis: GoalAnalysis;
+};
+
+export async function createGoalDraft({ ownerId, title, prompt, analysis }: { ownerId: string; title: string; prompt: string; analysis: GoalAnalysis }) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goals")
+    .insert({ owner_id: ownerId, title, prompt, plan: analysis, status: "draft" })
+    .select("id")
+    .single();
+
+  return { id: data?.id ?? null, error: error?.message ?? null };
+}
+
+export async function loadGoalDraft({ ownerId, goalId }: { ownerId: string; goalId: string }) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goals")
+    .select("id,title,prompt,plan")
+    .eq("id", goalId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (error || !data) return { data: null, error: error?.message ?? "That goal draft could not be found." };
+
+  return {
+    data: {
+      id: data.id,
+      title: data.title,
+      prompt: data.prompt ?? "",
+      analysis: data.plan as GoalAnalysis,
+    } satisfies GoalDraft,
+    error: null,
+  };
+}
+
+export async function saveGoalReview({ goalId, ownerId, title, prompt, analysis, mode, scheduledFor }: { goalId: string; ownerId: string; title: string; prompt: string; analysis: GoalAnalysis; mode: GoalCreationMode; scheduledFor: string }) {
   const supabase = createClient();
   const plan = { ...analysis, execution_mode: mode, scheduled_for: mode === "schedule" ? scheduledFor : null };
-  const { data, error } = await supabase.from("goals").insert({ owner_id: ownerId, title, prompt, plan, status: mode === "goal" ? "draft" : "active" }).select("id,title,status,updated_at").single();
-  if (error || !data) return { data: null, error: error?.message ?? "The goal could not be created." };
+  const { data, error } = await supabase
+    .from("goals")
+    .update({ title, prompt, plan, status: mode === "goal" ? "draft" : "active" })
+    .eq("id", goalId)
+    .eq("owner_id", ownerId)
+    .select("id,title,status,updated_at")
+    .single();
+
+  if (error || !data) return { data: null, error: error?.message ?? "The goal could not be saved." };
 
   let saveErrorMessage: string | null = null;
+  const { error: clearPermissionsError } = await supabase.from("goal_permissions").delete().eq("goal_id", goalId).eq("owner_id", ownerId);
+  if (clearPermissionsError) saveErrorMessage = clearPermissionsError.message;
+
   if (analysis.permissions.length > 0) {
     const { error: permissionsError } = await supabase.from("goal_permissions").insert(analysis.permissions.map((suggestion) => ({ goal_id: data.id, owner_id: ownerId, permission: suggestion.permission, reason: suggestion.reason, decision: suggestion.decision, source: suggestion.decision === "review" ? "ai" : "user" })));
     if (permissionsError) saveErrorMessage = permissionsError.message;
   }
+
+  const { error: clearWorkflowsError } = await supabase.from("workflows").delete().eq("goal_id", goalId).eq("owner_id", ownerId);
+  if (clearWorkflowsError) saveErrorMessage = clearWorkflowsError.message;
 
   if (mode !== "goal" && analysis.workflow_suggestions.length > 0) {
     const { error: workflowsError } = await supabase.from("workflows").insert(analysis.workflow_suggestions.map((workflow) => ({
