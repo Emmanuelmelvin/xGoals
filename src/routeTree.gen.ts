@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppGoalsRouteImport } from './routes/app.goals'
+import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,36 +32,81 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGoalsRoute = AppGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
+  id: '/workflow/$workflowId',
+  path: '/workflow/$workflowId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/goals': typeof AppGoalsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/goals': typeof AppGoalsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
+  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/goals': typeof AppGoalsRoute
+  '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth/callback' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/goals'
+    | '/app/workflows'
+    | '/auth/callback'
+    | '/app/'
+    | '/app/workflow/$workflowId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/callback' | '/app'
-  id: '__root__' | '/' | '/app' | '/auth/callback' | '/app/'
+  to:
+    | '/'
+    | '/app/goals'
+    | '/app/workflows'
+    | '/auth/callback'
+    | '/app'
+    | '/app/workflow/$workflowId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/goals'
+    | '/app/workflows'
+    | '/auth/callback'
+    | '/app/'
+    | '/app/workflow/$workflowId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -90,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/goals': {
+      id: '/app/goals'
+      path: '/goals'
+      fullPath: '/app/goals'
+      preLoaderRoute: typeof AppGoalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workflows': {
+      id: '/app/workflows'
+      path: '/workflows'
+      fullPath: '/app/workflows'
+      preLoaderRoute: typeof AppWorkflowsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -97,15 +159,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/workflow/$workflowId': {
+      id: '/app/workflow/$workflowId'
+      path: '/workflow/$workflowId'
+      fullPath: '/app/workflow/$workflowId'
+      preLoaderRoute: typeof AppWorkflowWorkflowIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppGoalsRoute: typeof AppGoalsRoute
+  AppWorkflowsRoute: typeof AppWorkflowsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppWorkflowWorkflowIdRoute: typeof AppWorkflowWorkflowIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppGoalsRoute: AppGoalsRoute,
+  AppWorkflowsRoute: AppWorkflowsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppWorkflowWorkflowIdRoute: AppWorkflowWorkflowIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
