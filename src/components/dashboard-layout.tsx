@@ -17,6 +17,7 @@ export type Goal = {
 };
 
 export type UserSummary = {
+  id: string;
   name: string;
   handle: string;
   email: string;
@@ -28,6 +29,8 @@ type DashboardContextValue = {
   user: UserSummary;
   goals: Goal[];
   visibleGoals: Goal[];
+  isGoalsLoading: boolean;
+  goalError: string | null;
   filter: GoalFilter;
   setFilter: (filter: GoalFilter) => void;
   openCreateGoal: () => void;
@@ -101,7 +104,38 @@ function getUserSummary(user: User): UserSummary {
   const avatarSource = (typeof metadata.avatar_url === "string" && metadata.avatar_url) || (typeof metadata.profile_image_url === "string" && metadata.profile_image_url) || (typeof metadata.profile_image_url_https === "string" && metadata.profile_image_url_https) || (typeof metadata.picture === "string" && metadata.picture) || null;
   const avatarUrl = avatarSource ? avatarSource.replace("_normal.", "_400x400.") : null;
   const profileUrl = (typeof metadata.profile_url === "string" && metadata.profile_url) || (typeof metadata.url === "string" && metadata.url) || `https://x.com/${handle}`;
-  return { name, handle: `@${handle}`, email: user.email ?? "", avatarUrl, profileUrl };
+  return { id: user.id, name, handle: `@${handle}`, email: user.email ?? "", avatarUrl, profileUrl };
+}
+
+function isGoalStatus(value: unknown): value is GoalStatus {
+  return value === "active" || value === "draft" || value === "paused" || value === "completed";
+}
+
+async function loadGoalsForUser(ownerId: string) {
+  const supabase = createClient();
+  const [{ data: goalRows, error: goalsError }, { data: workflowRows, error: workflowsError }] = await Promise.all([
+    supabase.from("goals").select("id,title,status,updated_at").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
+    supabase.from("workflows").select("goal_id").eq("owner_id", ownerId),
+  ]);
+
+  if (goalsError) return { goals: [] as Goal[], error: goalsError.message };
+  if (workflowsError) return { goals: [] as Goal[], error: workflowsError.message };
+
+  const workflowCounts = new Map<string, number>();
+  for (const workflow of workflowRows ?? []) {
+    if (typeof workflow.goal_id === "string") workflowCounts.set(workflow.goal_id, (workflowCounts.get(workflow.goal_id) ?? 0) + 1);
+  }
+
+  return {
+    goals: (goalRows ?? []).map((goal) => ({
+      id: goal.id,
+      title: goal.title,
+      status: isGoalStatus(goal.status) ? goal.status : "draft",
+      workflowCount: workflowCounts.get(goal.id) ?? 0,
+      updatedAt: new Date(goal.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    })),
+    error: null,
+  };
 }
 
 export function DashboardRouteLayout({ drawer, children }: { drawer?: DrawerState; children: ReactNode }) {
@@ -163,24 +197,46 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   const drawerOpen = drawer !== "closed";
   const [filter, setFilter] = useState<GoalFilter>("all");
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [isGoalsLoading, setIsGoalsLoading] = useState(true);
+  const [goalError, setGoalError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const visibleGoals = useMemo(() => filter === "all" ? goals : goals.filter((goal) => goal.status === filter), [filter, goals]);
 
+  useEffect(() => {
+    let mounted = true;
+    setIsGoalsLoading(true);
+    loadGoalsForUser(user.id).then(({ goals: loadedGoals, error }) => {
+      if (!mounted) return;
+      setGoals(loadedGoals);
+      setGoalError(error);
+      setIsGoalsLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [user.id]);
+
   function toggleDrawer() {
     void navigate({ search: (current) => ({ ...current, drawer: drawerOpen ? "closed" : "open" }) });
   }
-  function createGoal(event: FormEvent<HTMLFormElement>) {
+  async function createGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const title = newGoalTitle.trim();
     if (!title) return;
-    setGoals((current) => [{ id: crypto.randomUUID(), title, status: "draft", workflowCount: 0, updatedAt: "Just now" }, ...current]);
+
+    const { data, error } = await createClient().from("goals").insert({ owner_id: user.id, title }).select("id,title,status,updated_at").single();
+    if (error || !data) {
+      setGoalError(error?.message ?? "The goal could not be created.");
+      return;
+    }
+
+    setGoals((current) => [{ id: data.id, title: data.title, status: isGoalStatus(data.status) ? data.status : "draft", workflowCount: 0, updatedAt: "Just now" }, ...current]);
+    setGoalError(null);
     setNewGoalTitle("");
     setIsCreating(false);
   }
   async function signOut() { await createClient().auth.signOut(); }
 
-  const contextValue: DashboardContextValue = { user, goals, visibleGoals, filter, setFilter, openCreateGoal: () => setIsCreating(true) };
+  const contextValue: DashboardContextValue = { user, goals, visibleGoals, isGoalsLoading, goalError, filter, setFilter, openCreateGoal: () => setIsCreating(true) };
   const search = { drawer };
-  return <DashboardContext.Provider value={contextValue}><main className="flex min-h-screen bg-wash text-ink"><aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-line bg-paper transition-all duration-200 ${drawerOpen ? "w-72 p-5" : "w-20 p-3"}`} aria-label="Workspace navigation"><header className={`flex items-center ${drawerOpen ? "justify-between" : "justify-center"}`}><Link to="/" className="flex items-center gap-3" aria-label="xGoal home"><XGoalMark className="size-9 shrink-0" />{drawerOpen ? <span className="font-bold tracking-[-0.04em]">xGoal</span> : null}</Link>{drawerOpen ? <button type="button" onClick={toggleDrawer} className="rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Collapse navigation"><PanelLeftIcon /></button> : null}</header>{!drawerOpen ? <button type="button" onClick={toggleDrawer} className="mt-7 self-center rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Expand navigation"><PanelLeftIcon /></button> : null}<nav className="mt-10 space-y-1" aria-label="Main navigation"><Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Overview"}><GridIcon />{drawerOpen ? <span>Overview</span> : null}</Link><Link to="/app/goals" search={search} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Goals"}><GoalIcon />{drawerOpen ? <span>Goals</span> : null}</Link><Link to="/app/workflows" search={search} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Workflows"}><WorkflowIcon />{drawerOpen ? <span>Workflows</span> : null}</Link></nav>{drawerOpen ? <section className="mt-10 min-h-0 flex-1" aria-labelledby="goal-navigation-heading"><header className="flex items-center gap-2 px-2"><h2 id="goal-navigation-heading" className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Goals</h2><span className="flex-1" /><GoalStatusFilter value={filter} onChange={setFilter} /><button type="button" onClick={() => setIsCreating(true)} className="rounded-lg p-1.5 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Create a goal"><PlusIcon /></button></header><ul className="mt-4 space-y-1 overflow-y-auto">{visibleGoals.map((goal) => <li key={goal.id}><Link to="/app/goals" search={search} hash={`goal-${goal.id}`} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm text-muted transition-colors hover:bg-wash hover:text-ink"><span className="truncate">{goal.title}</span><span className="size-2 shrink-0 rounded-full bg-blue" /></Link></li>)}{visibleGoals.length === 0 ? <li className="rounded-xl border border-dashed border-line px-3 py-4 text-xs leading-5 text-muted">No goals here yet. Start with one clear outcome.</li> : null}</ul></section> : null}<footer className={`mt-auto border-t border-line pt-4 ${drawerOpen ? "" : "flex justify-center"}`}><Link to="/app/profile" search={search} className={`flex w-full items-center rounded-xl p-2 text-left transition-colors hover:bg-wash ${drawerOpen ? "gap-3" : "justify-center"}`} title={drawerOpen ? undefined : `${user.name} ${user.handle}`}><UserAvatar user={user} />{drawerOpen ? <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-semibold text-ink">{user.name}</strong><small className="mt-0.5 block truncate text-xs text-muted">{user.handle}</small></span> : null}{drawerOpen ? <ChevronRightIcon /> : null}</Link>{drawerOpen ? <button type="button" onClick={signOut} className="mt-2 flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-xs font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"><SettingsIcon />Sign out</button> : null}</footer></aside><section className="min-w-0 flex-1">{children}</section></main>{isCreating ? <section className="fixed inset-0 z-20 grid place-items-center bg-ink/30 p-5" role="dialog" aria-modal="true" aria-labelledby="new-goal-heading"><form onSubmit={createGoal} className="w-full max-w-lg rounded-3xl border border-line bg-paper p-6 shadow-2xl sm:p-8"><header className="flex items-start justify-between gap-4"><section><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue">New foundation</p><h2 id="new-goal-heading" className="mt-2 text-2xl font-semibold tracking-[-0.05em]">What are you working toward?</h2></section><button type="button" onClick={() => setIsCreating(false)} className="rounded-lg px-2 py-1 text-2xl leading-none text-muted hover:bg-wash hover:text-ink" aria-label="Close">×</button></header><label className="mt-8 block"><span className="text-sm font-semibold">Goal statement</span><textarea value={newGoalTitle} onChange={(event) => setNewGoalTitle(event.target.value)} autoFocus rows={4} placeholder="e.g. Build a thoughtful presence around product design" className="mt-2 w-full resize-none rounded-2xl border border-line bg-white p-4 text-sm leading-6 outline-none transition focus:border-blue" /></label><p className="mt-3 text-xs leading-5 text-muted">You can refine the details and permissions after the goal is created.</p><footer className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setIsCreating(false)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted hover:bg-wash hover:text-ink">Cancel</button><button type="submit" disabled={!newGoalTitle.trim()} className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Create goal<ArrowUpRightIcon /></button></footer></form></section> : null}</DashboardContext.Provider>;
+  return <DashboardContext.Provider value={contextValue}><main className="flex min-h-screen bg-wash text-ink"><aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-line bg-paper transition-all duration-200 ${drawerOpen ? "w-72 p-5" : "w-20 p-3"}`} aria-label="Workspace navigation"><header className={`flex items-center ${drawerOpen ? "justify-between" : "justify-center"}`}><Link to="/" className="flex items-center gap-3" aria-label="xGoal home"><XGoalMark className="size-9 shrink-0" />{drawerOpen ? <span className="font-bold tracking-[-0.04em]">xGoal</span> : null}</Link>{drawerOpen ? <button type="button" onClick={toggleDrawer} className="rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Collapse navigation"><PanelLeftIcon /></button> : null}</header>{!drawerOpen ? <button type="button" onClick={toggleDrawer} className="mt-7 self-center rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Expand navigation"><PanelLeftIcon /></button> : null}<nav className="mt-10 space-y-1" aria-label="Main navigation"><Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Overview"}><GridIcon />{drawerOpen ? <span>Overview</span> : null}</Link><Link to="/app/goals" search={search} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Goals"}><GoalIcon />{drawerOpen ? <span>Goals</span> : null}</Link><Link to="/app/workflows" search={search} activeProps={{ className: "flex items-center gap-3 rounded-xl bg-ink px-3 py-3 text-sm font-semibold text-white" }} inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${drawerOpen ? "gap-3" : "justify-center"}` }} title={drawerOpen ? undefined : "Workflows"}><WorkflowIcon />{drawerOpen ? <span>Workflows</span> : null}</Link></nav>{drawerOpen ? <section className="mt-10 min-h-0 flex-1" aria-labelledby="goal-navigation-heading"><header className="flex items-center gap-2 px-2"><h2 id="goal-navigation-heading" className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Goals</h2><span className="flex-1" /><GoalStatusFilter value={filter} onChange={setFilter} /><button type="button" onClick={() => setIsCreating(true)} className="rounded-lg p-1.5 text-muted transition-colors hover:bg-wash hover:text-ink" aria-label="Create a goal"><PlusIcon /></button></header><ul className="mt-4 space-y-1 overflow-y-auto">{isGoalsLoading ? <li className="rounded-xl border border-dashed border-line px-3 py-4 text-xs leading-5 text-muted">Loading goals...</li> : null}{goalError ? <li className="rounded-xl border border-dashed border-line px-3 py-4 text-xs leading-5 text-red-600">{goalError}</li> : null}{!isGoalsLoading ? visibleGoals.map((goal) => <li key={goal.id}><Link to="/app/goals" search={search} hash={`goal-${goal.id}`} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm text-muted transition-colors hover:bg-wash hover:text-ink"><span className="truncate">{goal.title}</span><span className="size-2 shrink-0 rounded-full bg-blue" /></Link></li>) : null}{!isGoalsLoading && !goalError && visibleGoals.length === 0 ? <li className="rounded-xl border border-dashed border-line px-3 py-4 text-xs leading-5 text-muted">No goals here yet. Start with one clear outcome.</li> : null}</ul></section> : null}<footer className={`mt-auto border-t border-line pt-4 ${drawerOpen ? "" : "flex justify-center"}`}><Link to="/app/profile" search={search} className={`flex w-full items-center rounded-xl p-2 text-left transition-colors hover:bg-wash ${drawerOpen ? "gap-3" : "justify-center"}`} title={drawerOpen ? undefined : `${user.name} ${user.handle}`}><UserAvatar user={user} />{drawerOpen ? <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-semibold text-ink">{user.name}</strong><small className="mt-0.5 block truncate text-xs text-muted">{user.handle}</small></span> : null}{drawerOpen ? <ChevronRightIcon /> : null}</Link>{drawerOpen ? <button type="button" onClick={signOut} className="mt-2 flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-xs font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"><SettingsIcon />Sign out</button> : null}</footer></aside><section className="min-w-0 flex-1">{children}</section></main>{isCreating ? <section className="fixed inset-0 z-20 grid place-items-center bg-ink/30 p-5" role="dialog" aria-modal="true" aria-labelledby="new-goal-heading"><form onSubmit={createGoal} className="w-full max-w-lg rounded-3xl border border-line bg-paper p-6 shadow-2xl sm:p-8"><header className="flex items-start justify-between gap-4"><section><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue">New foundation</p><h2 id="new-goal-heading" className="mt-2 text-2xl font-semibold tracking-[-0.05em]">What are you working toward?</h2></section><button type="button" onClick={() => setIsCreating(false)} className="rounded-lg px-2 py-1 text-2xl leading-none text-muted hover:bg-wash hover:text-ink" aria-label="Close">×</button></header><label className="mt-8 block"><span className="text-sm font-semibold">Goal statement</span><textarea value={newGoalTitle} onChange={(event) => setNewGoalTitle(event.target.value)} autoFocus rows={4} placeholder="e.g. Build a thoughtful presence around product design" className="mt-2 w-full resize-none rounded-2xl border border-line bg-white p-4 text-sm leading-6 outline-none transition focus:border-blue" /></label><p className="mt-3 text-xs leading-5 text-muted">You can refine the details and permissions after the goal is created.</p><footer className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setIsCreating(false)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted hover:bg-wash hover:text-ink">Cancel</button><button type="submit" disabled={!newGoalTitle.trim()} className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Create goal<ArrowUpRightIcon /></button></footer></form></section> : null}</DashboardContext.Provider>;
 }
