@@ -1,9 +1,9 @@
 import type { SVGProps } from "react";
 
-export function XGoalsMark(props: SVGProps<SVGSVGElement>) {
+export function XGoalMark(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" {...props}>
-      <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="currentColor" />
+      <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="#10141c" />
       <path
         d="M8.5 22.5 21.9 9.1M10.1 9.4l12.4 12.4"
         stroke="#f8fafc"

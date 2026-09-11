@@ -1,6 +1,6 @@
-# Contributing to XGoals
+# Contributing to xGoal
 
-Thank you for helping make XGoals better. Contributions can include bug reports, product and design feedback, documentation, tests, accessibility improvements, security reviews, and code.
+Thank you for helping make xGoal better. Contributions can include bug reports, product and design feedback, documentation, tests, accessibility improvements, security reviews, and code.
 
 ## Before you begin
 
@@ -11,7 +11,7 @@ Thank you for helping make XGoals better. Contributions can include bug reports,
 
 ## Local setup
 
-XGoals requires Node.js 22.12 or newer and pnpm.
+xGoal requires Node.js 22.12 or newer and pnpm.
 
 1. Fork and clone the repository.
 2. Run `pnpm install`.

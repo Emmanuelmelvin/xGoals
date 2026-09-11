@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { XGoalsMark } from "../components/logo";
+import { XGoalMark } from "../components/logo";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -57,16 +57,14 @@ function GoalBoard() {
           <span className="size-2 rounded-full bg-ink/25" />
           <span className="size-2 rounded-full bg-ink/15" />
           <p className="ml-auto text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted">
-            XGoals workspace
+            xGoal workspace
           </p>
         </div>
 
         <div className="grid lg:grid-cols-[0.31fr_1fr]">
           <aside className="border-b border-line bg-wash p-5 lg:border-b-0 lg:border-r sm:p-7">
             <div className="flex items-center gap-3 border-b border-line pb-6">
-              <div className="grid size-9 place-items-center rounded-xl bg-ink text-white">
-                <XGoalsMark className="size-5" />
-              </div>
+              <XGoalMark className="size-9" />
               <div>
                 <p className="text-sm font-bold text-ink">Your presence</p>
                 <p className="text-xs text-muted">AI agents community</p>
@@ -152,24 +150,22 @@ function GoalBoard() {
 }
 
 function LandingPage() {
+  // Replace this with the auth provider's session check when authentication is wired.
+  const isAuthenticated = false;
+
   return (
     <div className="min-h-screen overflow-hidden bg-paper text-ink">
       <header className="mx-auto flex h-20 w-[calc(100%-2rem)] max-w-[75rem] items-center justify-between gap-6 sm:h-24 sm:w-[calc(100%-4rem)]">
-        <Link to="/" className="flex items-center gap-3" aria-label="XGoals home">
-          <span className="grid size-9 place-items-center rounded-xl bg-ink text-white shadow-sm">
-            <XGoalsMark className="size-5" />
-          </span>
-          <span className="text-lg font-bold tracking-[-0.04em]">XGoals</span>
+        <Link to="/" className="flex items-center gap-3" aria-label="xGoal home">
+          <XGoalMark className="size-9" />
+          <span className="text-lg font-bold tracking-[-0.04em]">xGoal</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm font-semibold sm:gap-6" aria-label="Site navigation">
-          <Link to="/app" className="hidden text-muted transition-colors hover:text-ink sm:inline">
-            Log in
-          </Link>
           <Link
             to="/app"
             className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-white shadow-[0_4px_12px_rgba(16,20,28,0.14)] transition-transform hover:-translate-y-0.5"
           >
-            Start XGoals <ArrowUpRightIcon className="size-4" />
+            {isAuthenticated ? "Go to Dashboard" : "Start xGoal"} <ArrowUpRightIcon className="size-4" />
           </Link>
         </nav>
       </header>
@@ -234,7 +230,7 @@ function LandingPage() {
                 One goal. One useful move at a time.
               </h2>
               <p className="mt-6 text-base leading-7 text-muted sm:text-lg">
-                XGoals turns a vague intention into a focused rhythm you can see and shape.
+                xGoal turns a vague intention into a focused rhythm you can see and shape.
               </p>
             </div>
             <ol className="divide-y divide-line border-y border-line">
@@ -261,7 +257,7 @@ function LandingPage() {
                 Your ideas are already there. Give them a direction.
               </h2>
               <p className="mt-6 max-w-[31rem] text-base leading-7 text-white/65">
-                Start with an outcome. Let XGoals help with the follow-through.
+                Start with an outcome. Let xGoal help with the follow-through.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -286,8 +282,8 @@ function LandingPage() {
 
       <footer className="mx-auto flex w-[calc(100%-2rem)] max-w-[75rem] items-center justify-between gap-4 border-t border-line py-8 text-sm text-muted sm:w-[calc(100%-4rem)]">
         <div className="flex items-center gap-2 font-semibold text-ink">
-          <XGoalsMark className="size-5" />
-          XGoals
+          <XGoalMark className="size-5" />
+          xGoal
         </div>
         <p>Built for useful momentum.</p>
       </footer>

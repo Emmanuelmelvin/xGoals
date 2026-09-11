@@ -6,7 +6,7 @@ Project-specific guidance for AI coding agents.
 
 - Use Tailwind CSS v4 directly with the Vite plugin.
 - Keep the visual language calm, spacious, expressive, and product-led.
-- Follow the XGoals palette: ink black, soft grey, electric blue, and white.
+- Follow the xGoal palette: ink black, soft grey, electric blue, and white.
 - Use semantic HTML and Tailwind utilities for layout, responsive behavior, and states.
 - Prefer a small number of strong compositions over repeated card grids.
 - The marketing homepage should feel like a brand page, not an admin dashboard.

@@ -1,14 +1,14 @@
-# XGoals
+# xGoal
 
 Set a goal. Deploy an agent. Stay active in your niche.
 
-XGoals is a goal-driven AI content workspace for people who want to build a consistent, useful presence on X. Instead of asking for isolated posts, users describe an outcome in plain English. The agent then discovers relevant ideas, prepares drafts, suggests conversations, and tracks progress toward that goal.
+xGoal is a goal-driven AI content workspace for people who want to build a consistent, useful presence on X. Instead of asking for isolated posts, users describe an outcome in plain English. The agent then discovers relevant ideas, prepares drafts, suggests conversations, and tracks progress toward that goal.
 
 The user remains in control. Every post is reviewed and approved before it is published.
 
-## Why XGoals
+## Why xGoal
 
-XGoals is not a generic tweet generator, social media scheduler, or autonomous posting bot. The goal is the primary object: the user defines the outcome, and the agent chooses the next useful action.
+xGoal is not a generic tweet generator, social media scheduler, or autonomous posting bot. The goal is the primary object: the user defines the outcome, and the agent chooses the next useful action.
 
 The product is being developed around these principles:
 
@@ -114,7 +114,7 @@ src/
 
 ## Security and user control
 
-XGoals must never publish content without explicit authorization. Draft generation, approval, and publication are separate states. User content, preferences, credentials, and drafts should be protected with server-side authorization and row-level security.
+xGoal must never publish content without explicit authorization. Draft generation, approval, and publication are separate states. User content, preferences, credentials, and drafts should be protected with server-side authorization and row-level security.
 
 If you discover a security vulnerability, do not open a public issue with exploit details. Contact Emmanuel Chidi privately through the repository owner’s GitHub profile so the issue can be handled responsibly.
 
@@ -124,6 +124,6 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and fo
 
 ## License
 
-XGoals is free software licensed under the [GNU Affero General Public License version 3](LICENSE), SPDX identifier `AGPL-3.0-only`.
+xGoal is free software licensed under the [GNU Affero General Public License version 3](LICENSE), SPDX identifier `AGPL-3.0-only`.
 
 Copyright © 2026 Emmanuel Chidi.
