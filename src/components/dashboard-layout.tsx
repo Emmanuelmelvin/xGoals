@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { XGoalMark } from "./logo";
 import { createClient } from "../lib/supabase/client";
@@ -194,7 +194,8 @@ function UserAvatar({ user }: { user: UserSummary }) {
 }
 
 function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?: DrawerState; children: ReactNode }) {
-  const navigate = useNavigate({ from: "/app" });
+  const navigate = useNavigate();
+  const location = useLocation();
   const drawerOpen = drawer !== "closed";
   const [filter, setFilter] = useState<GoalFilter>("all");
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -219,7 +220,9 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   }, [user.id]);
 
   function toggleDrawer() {
-    void navigate({ search: (current) => ({ ...current, drawer: drawerOpen ? "closed" : "open" }) });
+    const nextSearch = new URLSearchParams(location.searchStr);
+    nextSearch.set("drawer", drawerOpen ? "closed" : "open");
+    void navigate({ href: `${location.pathname}?${nextSearch.toString()}${location.hash ? `#${location.hash}` : ""}` });
   }
   async function createGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
