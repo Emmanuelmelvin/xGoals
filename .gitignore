@@ -37,3 +37,5 @@ drizzle/meta/
 # Misc
 .cache/
 .temp/
+__pycache__/
+*.pyc
