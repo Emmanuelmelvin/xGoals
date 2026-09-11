@@ -21,11 +21,11 @@ function ProfilePage() {
         <Link to="/app" className="text-sm font-semibold text-muted transition-colors hover:text-ink">Back to overview</Link>
       </header>
 
-      <section className="mx-auto max-w-3xl space-y-8 p-5 sm:p-8">
+      <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8">
         <header>
           <p className="text-sm font-medium text-blue">Your identity</p>
           <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Your profile information.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted">This information comes from the X account connected to your xGoal workspace.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">This information comes from the X account connected to your xGoal workspace.</p>
         </header>
 
         <article className="overflow-hidden rounded-3xl border border-line bg-white">

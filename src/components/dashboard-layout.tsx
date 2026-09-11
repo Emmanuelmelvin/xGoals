@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/client";
 import { PanelLeftIcon } from "./dashboard/icons";
+import { Tooltip } from "./tooltip";
 import { loadGoalsForUser } from "./dashboard/goal-persistence";
 import { OnboardingPage } from "./dashboard/onboarding-page";
 import { WorkspaceSidebar } from "./dashboard/workspace-sidebar";
@@ -103,7 +104,9 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
         <button type="button" onClick={toggleDrawer} className="fixed inset-0 z-20 bg-ink/20 lg:hidden" aria-label="Close navigation" /> : null}
       <WorkspaceSidebar
         user={user} drawer={drawer} drawerOpen={drawerOpen} onCreateGoal={openGoalCreation} onToggleDrawer={toggleDrawer} onSignOut={signOut} />
-      <button type="button" onClick={toggleDrawer} aria-expanded={drawerOpen} aria-label={drawerOpen ? "Close navigation" : "Open navigation"} className="fixed right-4 top-4 z-40 rounded-xl border border-line bg-paper p-2.5 text-muted shadow-sm transition-colors hover:bg-wash hover:text-ink lg:hidden"><PanelLeftIcon /></button>
+      <Tooltip label={drawerOpen ? "Close navigation" : "Open navigation"} placement="left">
+        <button type="button" onClick={toggleDrawer} aria-expanded={drawerOpen} aria-label={drawerOpen ? "Close navigation" : "Open navigation"} className="fixed right-4 top-4 z-40 rounded-xl border border-line bg-paper p-2.5 text-muted shadow-sm transition-colors hover:bg-wash hover:text-ink lg:hidden"><PanelLeftIcon /></button>
+      </Tooltip>
       <section className={`min-w-0 flex-1 ${drawerOpen ? "lg:ml-72" : "lg:ml-20"}`}>{children}</section>
     </main>
   </DashboardContext.Provider>;

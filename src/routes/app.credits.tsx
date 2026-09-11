@@ -20,11 +20,11 @@ function CreditsPage() {
         </Link>
       </header>
 
-      <section className="mx-auto max-w-3xl space-y-8 p-5 sm:p-8">
+      <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8">
         <header>
           <p className="text-sm font-medium text-blue">Usage</p>
           <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Track your usage here soon.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
             Credits will show how much agent work, analysis, and scheduled runs your workspace has used.
           </p>
         </header>

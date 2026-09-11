@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { XGoalMark } from "../logo";
+import { Tooltip } from "../tooltip";
 import { ChevronRightIcon, CreditIcon, GoalIcon, GridIcon, PanelLeftIcon, PlusIcon, SettingsIcon, WorkflowIcon } from "./icons";
 import type { DrawerState, UserSummary } from "./types";
 
@@ -29,27 +30,39 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         <Link to="/" className="flex items-center" aria-label="xGoal home">
           <XGoalMark className="size-9 shrink-0" />
         </Link>
-        <button type="button" onClick={onToggleDrawer} className="mt-7 hidden rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink lg:block" aria-label="Expand navigation">
-          <PanelLeftIcon />
-        </button>
+        <Tooltip label="Expand navigation" placement="right">
+          <button type="button" onClick={onToggleDrawer} className="mt-7 hidden rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink lg:block" aria-label="Expand navigation">
+            <PanelLeftIcon />
+          </button>
+        </Tooltip>
         <nav className="mt-8 flex flex-col items-center gap-1" aria-label="Main navigation">
-          <Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }} title="Overview">
-            <GridIcon />
-          </Link>
-          <Link to="/app/goals" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }} title="Goals">
-            <GoalIcon />
-          </Link>
-          <Link to="/app/workflows" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }} title="Workflows">
-            <WorkflowIcon />
-          </Link>
-          <Link to="/app/credits" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }} title="Credits">
-            <CreditIcon />
-          </Link>
+          <Tooltip label="Overview" placement="right">
+            <Link to="/app" search={search} activeOptions={{ exact: true }} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+              <GridIcon />
+            </Link>
+          </Tooltip>
+          <Tooltip label="Goals" placement="right">
+            <Link to="/app/goals" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+              <GoalIcon />
+            </Link>
+          </Tooltip>
+          <Tooltip label="Workflows" placement="right">
+            <Link to="/app/workflows" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+              <WorkflowIcon />
+            </Link>
+          </Tooltip>
+          <Tooltip label="Credits — usage tracking coming soon" placement="right">
+            <Link to="/app/credits" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-ink text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+              <CreditIcon />
+            </Link>
+          </Tooltip>
         </nav>
         <footer className="mt-auto flex justify-center">
-          <Link to="/app/profile" search={search} className="rounded-xl p-1 transition-colors hover:bg-wash" title={`${user.name} ${user.handle}`}>
-            <UserAvatar user={user} />
-          </Link>
+          <Tooltip label={`${user.name} ${user.handle}`} placement="right">
+            <Link to="/app/profile" search={search} className="rounded-xl p-1 transition-colors hover:bg-wash">
+              <UserAvatar user={user} />
+            </Link>
+          </Tooltip>
         </footer>
       </aside>
     );
@@ -62,9 +75,11 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           <XGoalMark className="size-9 shrink-0" />
           <span className="font-bold tracking-[-0.04em]">xGoal</span>
         </Link>
-        <button type="button" onClick={onToggleDrawer} className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink lg:inline-flex" aria-label="Collapse navigation">
-          <PanelLeftIcon />
-        </button>
+        <Tooltip label="Collapse navigation" placement="bottom">
+          <button type="button" onClick={onToggleDrawer} className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-wash hover:text-ink lg:inline-flex" aria-label="Collapse navigation">
+            <PanelLeftIcon />
+          </button>
+        </Tooltip>
       </header>
 
       <nav className="mt-10 space-y-1" aria-label="Main navigation">
@@ -107,7 +122,9 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         >
           <CreditIcon />
           <span className="flex-1">Credits</span>
-          <span className="rounded-full bg-wash px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-muted">Soon</span>
+          <Tooltip label="Usage tracking is coming soon" placement="top">
+            <span className="rounded-full bg-wash px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-muted">Soon</span>
+          </Tooltip>
         </Link>
       </nav>
 

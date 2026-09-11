@@ -11,6 +11,7 @@ import {
 } from "../components/dashboard/goal-persistence";
 import { analyzeGoal, type GoalAnalysis } from "../lib/ai/agent-server-fns";
 import { useToast } from "../components/toast";
+import { Tooltip } from "../components/tooltip";
 
 export const Route = createFileRoute("/app/review")({
   validateSearch: (search: Record<string, unknown>): { drawer?: "open" | "closed"; goalId?: string } => ({
@@ -264,7 +265,9 @@ function GoalReviewPage({ goalId }: { goalId: string }) {
           <span className="hidden h-4 w-px bg-line sm:block" aria-hidden="true" />
           <p className="hidden truncate text-sm text-muted sm:block">Reviewing draft</p>
         </section>
-        <span className="inline-flex shrink-0 rounded-full bg-blue-pale px-2.5 py-1 text-xs font-bold text-blue-dark">Draft</span>
+        <Tooltip label="Saved as a draft — nothing is live yet" placement="bottom">
+          <span className="inline-flex shrink-0 rounded-full bg-blue-pale px-2.5 py-1 text-xs font-bold text-blue-dark">Draft</span>
+        </Tooltip>
       </header>
 
       <section className="mx-auto w-full max-w-4xl p-5 sm:p-8">
@@ -298,15 +301,16 @@ function GoalReviewPage({ goalId }: { goalId: string }) {
             >
               {isSaving ? "Saving…" : "Save draft"}
             </button>
-            <button
-              type="button"
-              onClick={() => void handleSave("schedule")}
-              disabled={isSaving || !canSchedule}
-              title={!scheduledFor ? "Choose a first run time below" : undefined}
-              className="rounded-xl border border-blue/30 bg-blue-pale px-4 py-2 text-sm font-bold text-blue-dark disabled:opacity-40"
-            >
-              Schedule
-            </button>
+            <Tooltip label={scheduledFor ? "Schedule this workflow for the chosen time" : "Choose a first run time below"} placement="top">
+              <button
+                type="button"
+                onClick={() => void handleSave("schedule")}
+                disabled={isSaving || !canSchedule}
+                className="rounded-xl border border-blue/30 bg-blue-pale px-4 py-2 text-sm font-bold text-blue-dark disabled:opacity-40"
+              >
+                Schedule
+              </button>
+            </Tooltip>
             <button
               type="button"
               onClick={() => void handleSave("deploy")}
