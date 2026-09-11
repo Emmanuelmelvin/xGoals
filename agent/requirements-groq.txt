@@ -1,0 +1,2 @@
+-r requirements.txt
+strands-agents[openai]>=1.0,<2

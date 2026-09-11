@@ -1,16 +1,37 @@
 # xGoal local agent
 
-This service runs the hackathon agent locally with Strands Agents SDK and Ollama.
+This service runs the hackathon agent with the Strands Agents SDK. Ollama is the
+default provider, and the provider can be selected through `AI_PROVIDER`.
 
 ## Setup
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r agent\requirements.txt
+python -m pip install -r agent\requirements-ollama.txt
 ollama pull llama3.1
 ollama serve
 ```
+
+Install only the provider you want:
+
+```powershell
+python -m pip install -r agent\requirements-ollama.txt
+python -m pip install -r agent\requirements-bedrock.txt
+python -m pip install -r agent\requirements-openai.txt
+python -m pip install -r agent\requirements-groq.txt
+```
+
+Set the provider in `.env`:
+
+```env
+AI_PROVIDER="ollama"
+```
+
+Use `bedrock`, `openai`, or `groq` for the other supported providers. Bedrock
+uses the normal AWS credential chain or the `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` environment variables. Set
+`BEDROCK_MODEL_ID` when you want a specific Bedrock model.
 
 Start the agent service from the repository root:
 
