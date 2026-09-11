@@ -7,6 +7,7 @@ import { NavIcon } from "@astryxdesign/core/NavIcon";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
 import { TopNav, TopNavHeading } from "@astryxdesign/core/TopNav";
+import { XGoalsMark } from "../components/logo";
 
 export const Route = createFileRoute("/app/")({
   component: AppPlaceholder,
@@ -24,29 +25,7 @@ function AppPlaceholder() {
             <TopNavHeading
               heading="XGoals"
               logo={
-                <NavIcon
-                  icon={
-                    <Icon
-                      icon={(props: React.SVGProps<SVGSVGElement>) => (
-                        <svg
-                          viewBox="0 0 16 16"
-                          fill="none"
-                          aria-hidden="true"
-                          {...props}
-                        >
-                          <circle
-                            cx="8"
-                            cy="8"
-                            r="6.5"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          />
-                          <circle cx="8" cy="8" r="2.5" fill="currentColor" />
-                        </svg>
-                      )}
-                    />
-                  }
-                />
+                <NavIcon icon={<Icon icon={XGoalsMark} />} />
               }
             />
           }

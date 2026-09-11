@@ -18,6 +18,7 @@ export const Route = createRootRoute({
           "A goal-driven AI agent that helps you stay consistently active on X within your niche.",
       },
     ],
+    links: [{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
   }),
   component: RootComponent,
 });
