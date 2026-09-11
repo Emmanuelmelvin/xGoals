@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { XGoalMark } from "../components/logo";
+import { createClient } from "../lib/supabase/client";
 
 export const Route = createFileRoute("/app/")({
   component: OnboardingPage,
@@ -37,6 +39,34 @@ function ArrowUpRightIcon() {
 }
 
 function OnboardingPage() {
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleContinueWithX() {
+    setIsSigningIn(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: "x",
+        options: {
+          redirectTo:
+            import.meta.env.VITE_SUPABASE_AUTH_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setIsSigningIn(false);
+      }
+    } catch {
+      setError("X sign-in is not configured yet. Check your Supabase environment variables.");
+      setIsSigningIn(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-paper text-ink">
       <header className="mx-auto flex h-20 w-[calc(100%-2rem)] max-w-[75rem] items-center justify-between gap-6 sm:h-24 sm:w-[calc(100%-4rem)]">
@@ -92,11 +122,19 @@ function OnboardingPage() {
 
             <button
               type="button"
-              className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white shadow-[0_5px_18px_rgba(16,20,28,0.18)] transition-transform hover:-translate-y-0.5"
+              onClick={handleContinueWithX}
+              disabled={isSigningIn}
+              aria-busy={isSigningIn}
+              className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white shadow-[0_5px_18px_rgba(16,20,28,0.18)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Continue with X
+              {isSigningIn ? "Opening X..." : "Continue with X"}
               <ArrowUpRightIcon />
             </button>
+            {error ? (
+              <p className="mt-4 text-center text-xs leading-5 text-red-600" role="alert">
+                {error}
+              </p>
+            ) : null}
             <p className="mt-5 text-center text-xs leading-5 text-muted">
               You stay in control. xGoal starts with drafts and suggestions, not autoposting.
             </p>

@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { XGoalMark } from "../components/logo";
+import { createClient } from "../lib/supabase/client";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -150,8 +152,29 @@ function GoalBoard() {
 }
 
 function LandingPage() {
-  // Replace this with the auth provider's session check when authentication is wired.
-  const isAuthenticated = false;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    let supabase;
+
+    try {
+      supabase = createClient();
+    } catch {
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAuthenticated(Boolean(data.session));
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session));
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen overflow-hidden bg-paper text-ink">
