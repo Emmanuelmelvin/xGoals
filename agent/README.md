@@ -33,6 +33,10 @@ uses the normal AWS credential chain or the `AWS_ACCESS_KEY_ID`,
 `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` environment variables. Set
 `BEDROCK_MODEL_ID` when you want a specific Bedrock model.
 
+The agent logs to stdout. Set `AI_LOG_LEVEL="DEBUG"` for more detail. `make
+start` opens a visible PowerShell window for the agent logs; use `make logs` to
+run the agent in the current terminal instead.
+
 Start the agent service from the repository root:
 
 ```powershell

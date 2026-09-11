@@ -1,3 +1,8 @@
+import json
+import logging
+import os
+import sys
+import time
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
@@ -5,6 +10,15 @@ from pydantic import BaseModel, Field
 from strands import Agent
 
 from agent.providers import build_model, provider_status
+
+
+logging.basicConfig(
+    level=os.getenv("AI_LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    stream=sys.stdout,
+    force=True,
+)
+logger = logging.getLogger("xgoal.agent")
 
 
 PermissionDecision = Literal["review"]
@@ -49,6 +63,25 @@ class GoalAnalysis(BaseModel):
 app = FastAPI(title="xGoal Agent", version="0.1.0")
 
 
+@app.middleware("http")
+async def request_logging_middleware(request, call_next):
+    started_at = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("request_failed method=%s path=%s", request.method, request.url.path)
+        raise
+    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    logger.info(
+        "request method=%s path=%s status=%s duration_ms=%.1f",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
+
+
 def build_agent() -> Agent:
     return Agent(
         model=build_model(),
@@ -85,9 +118,61 @@ def sanitize_analysis(analysis: GoalAnalysis) -> GoalAnalysis:
     )
 
 
+def _response_text(result) -> str:
+    message = getattr(result, "message", None)
+    if isinstance(message, dict):
+        content = message.get("content", [])
+        text_blocks = [
+            block.get("text", "")
+            for block in content
+            if isinstance(block, dict) and isinstance(block.get("text"), str)
+        ]
+        if text_blocks:
+            return "\n".join(text_blocks).strip()
+    return str(result).strip()
+
+
+def _parse_json_analysis(result) -> GoalAnalysis:
+    response_text = _response_text(result)
+    logger.debug("fallback_response_length=%d", len(response_text))
+    try:
+        payload = json.loads(response_text)
+    except json.JSONDecodeError:
+        start = response_text.find("{")
+        end = response_text.rfind("}")
+        if start < 0 or end <= start:
+            raise ValueError("The model did not return a JSON object.")
+        payload = json.loads(response_text[start : end + 1])
+    return GoalAnalysis.model_validate(payload)
+
+
+def _fallback_json_prompt(prompt: str) -> str:
+    schema = {
+        "summary": "one concise sentence",
+        "permissions": [
+            {
+                "permission": "posts:read",
+                "reason": "why this permission is needed",
+                "decision": "review",
+            }
+        ],
+        "workflow_suggestions": [
+            {"name": "workflow name", "description": "what it does"}
+        ],
+    }
+    return (
+        f"{prompt}\n\n"
+        "Return only valid JSON. Do not use markdown, comments, or a tool call. "
+        "Use this exact object shape and keep every permission decision as review:\n"
+        f"{json.dumps(schema)}"
+    )
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", **provider_status()}
+    status = {"status": "ok", **provider_status()}
+    logger.info("health provider=%s model=%s", status["provider"], status["model"])
+    return status
 
 
 @app.post("/analyze-goal", response_model=GoalAnalysis)
@@ -100,11 +185,46 @@ def analyze_goal(request: AnalyzeGoalRequest) -> GoalAnalysis:
         f"User prompt: <goal_prompt>{request.prompt}</goal_prompt>"
     )
 
+    logger.info(
+        "goal_analysis_started title=%r prompt_length=%d provider=%s",
+        request.title,
+        len(request.prompt),
+        provider_status()["provider"],
+    )
+
+    provider = provider_status()["provider"]
     try:
+        if provider == "groq":
+            # Groq's JSON mode cannot be combined with the tool call that
+            # Strands uses for structured_output_model. Ask for JSON directly
+            # and validate it locally instead.
+            result = build_agent()(_fallback_json_prompt(prompt))
+            analysis = _parse_json_analysis(result)
+            logger.info("goal_analysis_completed mode=json permissions=%d", len(analysis.permissions))
+            return sanitize_analysis(analysis)
+
         result = build_agent()(prompt, structured_output_model=GoalAnalysis)
         analysis = result.structured_output
         if not isinstance(analysis, GoalAnalysis):
             analysis = GoalAnalysis.model_validate(analysis)
+        logger.info("goal_analysis_completed mode=structured permissions=%d", len(analysis.permissions))
         return sanitize_analysis(analysis)
-    except Exception as error:
-        raise HTTPException(status_code=502, detail=f"Goal analysis failed: {error}") from error
+    except Exception as structured_error:
+        logger.warning(
+            "primary_goal_analysis_failed provider=%s error_type=%s error=%s",
+            provider,
+            type(structured_error).__name__,
+            structured_error,
+        )
+
+    try:
+        fallback_result = build_agent()(_fallback_json_prompt(prompt))
+        analysis = _parse_json_analysis(fallback_result)
+        logger.info("goal_analysis_completed mode=json_fallback permissions=%d", len(analysis.permissions))
+        return sanitize_analysis(analysis)
+    except Exception as fallback_error:
+        logger.exception("json_goal_analysis_failed error=%s", fallback_error)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Goal analysis failed: {fallback_error}",
+        ) from fallback_error

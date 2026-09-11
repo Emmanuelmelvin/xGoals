@@ -7,6 +7,7 @@ agent can still run without a hosted-model account.
 from __future__ import annotations
 
 import os
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,9 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 load_dotenv(PROJECT_ROOT / ".env.local", override=True)
+
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PROVIDER = "ollama"
 SUPPORTED_PROVIDERS = {"ollama", "bedrock", "openai", "groq"}
@@ -60,6 +64,7 @@ def _required_env(name: str) -> str:
 def build_model() -> Any:
     provider = get_provider_name()
     model_id = get_model_name(provider)
+    logger.info("Initializing model provider=%s model=%s", provider, model_id)
 
     try:
         if provider == "ollama":
@@ -99,7 +104,14 @@ def build_model() -> Any:
         return OpenAIModel(
             client_args=client_args,
             model_id=model_id,
-            params={"temperature": _temperature()},
+            params={
+                "temperature": _temperature(),
+                **(
+                    {"response_format": {"type": "json_object"}}
+                    if provider == "groq"
+                    else {}
+                ),
+            },
         )
     except ImportError as error:
         requirements_file = f"requirements-{provider}.txt"
