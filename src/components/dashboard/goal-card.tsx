@@ -1,12 +1,8 @@
 import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { LoaderCircle } from "lucide-react";
 import { Tooltip, type TooltipPlacement } from "../tooltip";
-import { useToast } from "../toast";
-import { useDashboard } from "../dashboard-layout";
-import { createDeployment } from "./goal-persistence";
 import { BranchIcon, BranchPlusIcon, ClockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
-import type { Goal } from "./types";
+import type { DeploymentStatus, Goal } from "./types";
 
 function pluralize(count: number, singular: string, plural?: string) {
   return count === 1 ? singular : (plural ?? `${singular}s`);
@@ -16,6 +12,21 @@ function StatusDot({ tone }: { tone: "running" | "paused" | "stopped" }) {
   const toneClass =
     tone === "running" ? "bg-emerald-500" : tone === "paused" ? "bg-amber-500" : "bg-slate-400";
   return <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${toneClass}`} />;
+}
+
+export function StatusPill({ status }: { status: DeploymentStatus }) {
+  const styles =
+    status === "running"
+      ? "bg-emerald-100 text-emerald-800"
+      : status === "paused"
+        ? "bg-amber-100 text-amber-800"
+        : "bg-wash text-muted";
+  const label = status === "running" ? "Running" : status === "paused" ? "Paused" : "Stopped";
+  return (
+    <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold ${styles}`}>
+      {label}
+    </span>
+  );
 }
 
 export function WorkflowStatusSummary({ goal }: { goal: Goal }) {
