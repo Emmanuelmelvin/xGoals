@@ -9,6 +9,23 @@ export type WorkflowStatusBreakdown = {
   stopped: number;
 };
 
+export type WorkflowDefinition = {
+  milestones: Milestone[];
+  permissions: string[];
+  runLengthDays: number | null;
+  endsAt: string | null;
+};
+
+export type RunStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+export type WorkflowRun = {
+  id: string;
+  status: RunStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  errorMessage: string | null;
+};
+
 export type Milestone = {
   title: string;
   completed: boolean;
@@ -31,6 +48,8 @@ export type Deployment = {
   goalId: string;
   name: string;
   status: DeploymentStatus;
+  createdAt: string;
+  definition: WorkflowDefinition;
 };
 
 export type UserSummary = {

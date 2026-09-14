@@ -1,8 +1,76 @@
 import { createClient } from "../../lib/supabase/client";
-import type { Deployment, DeploymentStatus, Goal, Milestone } from "./types";
+import type { Deployment, DeploymentStatus, Goal, Milestone, RunStatus, WorkflowDefinition, WorkflowRun } from "./types";
 
 export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
   return value === "running" || value === "paused" || value === "stopped";
+}
+
+export function isRunStatus(value: unknown): value is RunStatus {
+  return value === "queued" || value === "running" || value === "succeeded" || value === "failed" || value === "cancelled";
+}
+
+export function parseMilestoneList(raw: unknown): Milestone[] {
+  if (!Array.isArray(raw)) return [];
+  const milestones: Milestone[] = [];
+  for (const entry of raw) {
+    if (typeof entry === "string") {
+      const title = entry.trim();
+      if (title) milestones.push({ title, completed: false });
+    } else if (typeof entry === "object" && entry !== null) {
+      const record = entry as Record<string, unknown>;
+      const titleSource = record.title ?? record.text ?? record.label ?? record.name;
+      const title = typeof titleSource === "string" ? titleSource.trim() : "";
+      if (!title) continue;
+      const status = record.status ?? record.state;
+      const completed =
+        record.completed === true ||
+        record.done === true ||
+        record.is_complete === true ||
+        record.isComplete === true ||
+        status === "completed" ||
+        status === "complete" ||
+        status === "done";
+      milestones.push({ title, completed });
+    }
+  }
+  return milestones;
+}
+
+function parseStringList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((item): item is string => typeof item === "string");
+}
+
+export function parseWorkflowDefinition(value: unknown): WorkflowDefinition {
+  if (typeof value !== "object" || value === null) {
+    return { milestones: [], permissions: [], runLengthDays: null, endsAt: null };
+  }
+  const record = value as Record<string, unknown>;
+  const runLengthDays = typeof record.run_length_days === "number" && record.run_length_days > 0 ? Math.floor(record.run_length_days) : null;
+  return {
+    milestones: parseMilestoneList(record.milestones),
+    permissions: parseStringList(record.permissions),
+    runLengthDays,
+    endsAt: typeof record.ends_at === "string" && record.ends_at ? record.ends_at : null,
+  };
+}
+
+function toShortDate(value: unknown): string {
+  if (typeof value !== "string" || !value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function toDeployment(row: { id: string; goal_id: string; name: string; status: unknown; created_at: string; definition: unknown }): Deployment {
+  return {
+    id: row.id,
+    goalId: row.goal_id,
+    name: row.name,
+    status: isDeploymentStatus(row.status) ? row.status : "stopped",
+    createdAt: toShortDate(row.created_at),
+    definition: parseWorkflowDefinition(row.definition),
+  };
 }
 
 export async function loadGoalsForUser(ownerId: string) {
@@ -35,31 +103,7 @@ export async function loadGoalsForUser(ownerId: string) {
 
   function getMilestones(plan: unknown): Milestone[] {
     if (typeof plan !== "object" || plan === null) return [];
-    const raw = (plan as { milestones?: unknown }).milestones;
-    if (!Array.isArray(raw)) return [];
-    const milestones: Milestone[] = [];
-    for (const entry of raw) {
-      if (typeof entry === "string") {
-        const title = entry.trim();
-        if (title) milestones.push({ title, completed: false });
-      } else if (typeof entry === "object" && entry !== null) {
-        const record = entry as Record<string, unknown>;
-        const titleSource = record.title ?? record.text ?? record.label ?? record.name;
-        const title = typeof titleSource === "string" ? titleSource.trim() : "";
-        if (!title) continue;
-        const status = record.status ?? record.state;
-        const completed =
-          record.completed === true ||
-          record.done === true ||
-          record.is_complete === true ||
-          record.isComplete === true ||
-          status === "completed" ||
-          status === "complete" ||
-          status === "done";
-        milestones.push({ title, completed });
-      }
-    }
-    return milestones;
+    return parseMilestoneList((plan as { milestones?: unknown }).milestones);
   }
 
   return {
@@ -82,21 +126,72 @@ export async function loadDeploymentsForUser(ownerId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("workflows")
-    .select("id,goal_id,name,status")
+    .select("id,goal_id,name,status,created_at,definition")
     .eq("owner_id", ownerId)
     .order("updated_at", { ascending: false });
 
   if (error) return { deployments: [] as Deployment[], error: error.message };
 
   return {
-    deployments: (data ?? []).map((row) => ({
+    deployments: (data ?? []).map((row) => toDeployment(row as { id: string; goal_id: string; name: string; status: unknown; created_at: string; definition: unknown })),
+    error: null,
+  };
+}
+
+export async function loadWorkflow({ ownerId, workflowId }: { ownerId: string; workflowId: string }) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("workflows")
+    .select("id,goal_id,name,status,created_at,definition")
+    .eq("owner_id", ownerId)
+    .eq("id", workflowId)
+    .single();
+
+  if (error || !data) return { workflow: null as Deployment | null, error: error?.message ?? "Workflow not found." };
+  return { workflow: toDeployment(data as { id: string; goal_id: string; name: string; status: unknown; created_at: string; definition: unknown }), error: null };
+}
+
+export async function loadWorkflowRuns({ ownerId, workflowId }: { ownerId: string; workflowId: string }) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("workflow_runs")
+    .select("id,status,started_at,finished_at,error_message")
+    .eq("owner_id", ownerId)
+    .eq("workflow_id", workflowId)
+    .order("created_at", { ascending: false });
+
+  if (error) return { runs: [] as WorkflowRun[], error: error.message };
+
+  return {
+    runs: (data ?? []).map((row) => ({
       id: row.id,
-      goalId: row.goal_id,
-      name: row.name,
-      status: isDeploymentStatus(row.status) ? row.status : "stopped",
+      status: isRunStatus(row.status) ? row.status : "queued",
+      startedAt: typeof row.started_at === "string" ? row.started_at : null,
+      finishedAt: typeof row.finished_at === "string" ? row.finished_at : null,
+      errorMessage: typeof row.error_message === "string" && row.error_message ? row.error_message : null,
     })),
     error: null,
   };
+}
+
+export async function updateWorkflowStatus({ ownerId, workflowId, status }: { ownerId: string; workflowId: string; status: DeploymentStatus }) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("workflows")
+    .update({ status })
+    .eq("id", workflowId)
+    .eq("owner_id", ownerId);
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
+export async function deleteWorkflow({ ownerId, workflowId }: { ownerId: string; workflowId: string }) {
+  const supabase = createClient();
+  const { error } = await supabase.from("workflows").delete().eq("id", workflowId).eq("owner_id", ownerId);
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
 }
 
 export async function updateGoal({ ownerId, goalId, title, description, milestones, permissions }: { ownerId: string; goalId: string; title: string; description: string; milestones: string[]; permissions: string[] | null }) {
@@ -134,6 +229,18 @@ export async function updateGoal({ ownerId, goalId, title, description, mileston
 export async function deleteGoal({ ownerId, goalId }: { ownerId: string; goalId: string }) {
   const supabase = createClient();
   const { error } = await supabase.from("goals").delete().eq("id", goalId).eq("owner_id", ownerId);
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
+export async function updateGoalParent({ ownerId, goalId, parentGoalId }: { ownerId: string; goalId: string; parentGoalId: string | null }) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("goals")
+    .update({ parent_goal_id: parentGoalId })
+    .eq("id", goalId)
+    .eq("owner_id", ownerId);
 
   if (error) return { error: error.message };
   return { error: null as string | null };
@@ -244,16 +351,16 @@ export async function createGoal({ ownerId, title, description, milestones, perm
   return { id: goal.id as string, error: null as string | null };
 }
 
-export async function createDeployment({ ownerId, goalId, name, milestones, permissions }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[] }) {
+export async function createDeployment({ ownerId, goalId, name, milestones, permissions, runLengthDays, endsAt }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[]; runLengthDays?: number | null; endsAt?: string | null }) {
   const supabase = createClient();
-  const { error } = await supabase.from("workflows").insert({
+  const { data, error } = await supabase.from("workflows").insert({
     goal_id: goalId,
     owner_id: ownerId,
     name,
     status: "running",
-    definition: { version: 1, milestones, permissions, approval_required: true },
-  });
+    definition: { version: 1, milestones, permissions, approval_required: true, run_length_days: runLengthDays ?? null, ends_at: endsAt ?? null },
+  }).select("id").single();
 
-  if (error) return { error: error.message };
-  return { error: null as string | null };
+  if (error || !data) return { id: null as string | null, error: error?.message ?? "The workflow could not be created." };
+  return { id: data.id as string, error: null as string | null };
 }

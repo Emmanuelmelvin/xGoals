@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
 import { GoalCardActions, GoalCardMeta, WorkflowStatusSummary, useCreateWorkflow } from "../components/dashboard/goal-card";
-import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions } from "../components/dashboard/goal-persistence";
+import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
 import { fieldInputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
@@ -34,9 +34,15 @@ function StatusPill({ status }: { status: Deployment["status"] }) {
   );
 }
 
-function DeleteBranchDialog({ goalTitle, workflowCount, isDeleting, onClose, onConfirm }: { goalTitle: string; workflowCount: number; isDeleting: boolean; onClose: () => void; onConfirm: () => void }) {
+type BranchDeleteDecision = { scope: "all" | "keep-one"; keepGoalId: string | null };
+
+function DeleteBranchDialog({ noun, goalTitle, workflowCount, childBranches, isDeleting, onClose, onConfirm }: { noun: "branch" | "goal"; goalTitle: string; workflowCount: number; childBranches: { id: string; title: string; workflowCount: number }[]; isDeleting: boolean; onClose: () => void; onConfirm: (decision: BranchDeleteDecision) => void }) {
   const [value, setValue] = useState("");
+  const [scope, setScope] = useState<"all" | "keep-one">("keep-one");
+  const [keepGoalId, setKeepGoalId] = useState<string | null>(childBranches[0]?.id ?? null);
   const confirmed = value.trim() === "confirm";
+  const showBranchOptions = noun === "goal" && childBranches.length > 0;
+  const canConfirm = confirmed && !isDeleting && (!showBranchOptions || scope === "all" || !!keepGoalId);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -47,11 +53,11 @@ function DeleteBranchDialog({ goalTitle, workflowCount, isDeleting, onClose, onC
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-branch-title">
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="delete-goal-title">
       <button type="button" aria-label="Cancel deletion" onClick={onClose} className="absolute inset-0 cursor-default bg-ink/40" />
-      <section className="relative w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-xl sm:p-7">
-        <h2 id="delete-branch-title" className="text-xl font-semibold tracking-[-0.04em]">
-          Delete this branch?
+      <section className="relative my-8 w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-xl sm:p-7">
+        <h2 id="delete-goal-title" className="text-xl font-semibold tracking-[-0.04em]">
+          Delete this {noun}?
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           This permanently deletes <strong className="font-semibold text-ink">“{goalTitle}”</strong>
@@ -60,6 +66,60 @@ function DeleteBranchDialog({ goalTitle, workflowCount, isDeleting, onClose, onC
           ) : null}
           . This can't be undone.
         </p>
+        {showBranchOptions ? (
+          <fieldset className="mt-5" disabled={isDeleting}>
+            <legend className="text-sm font-semibold">Branches · {childBranches.length}</legend>
+            <div className="mt-2 space-y-2">
+              <label className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${scope === "all" ? "border-blue/40 bg-blue-pale/40" : "border-line bg-white"}`}>
+                <input
+                  type="radio"
+                  name="branch-scope"
+                  checked={scope === "all"}
+                  onChange={() => setScope("all")}
+                  className="mt-1 size-4 shrink-0 accent-blue"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-ink">Delete all branches</span>
+                  <span className="mt-0.5 block text-xs leading-5 text-muted">Removes this goal and every branch under it.</span>
+                </span>
+              </label>
+              <div className={`rounded-2xl border transition-colors ${scope === "keep-one" ? "border-blue/40 bg-blue-pale/40" : "border-line bg-white"}`}>
+                <label className="flex cursor-pointer items-start gap-3 p-4">
+                  <input
+                    type="radio"
+                    name="branch-scope"
+                    checked={scope === "keep-one"}
+                    onChange={() => {
+                      setScope("keep-one");
+                      if (!keepGoalId && childBranches[0]) setKeepGoalId(childBranches[0].id);
+                    }}
+                    className="mt-1 size-4 shrink-0 accent-blue"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-ink">Keep one as the new top level</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-muted">It takes over — the other branches move under it.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+            {scope === "keep-one" ? (
+              <label className="mt-3 block">
+                <span className="text-xs font-semibold text-muted">Branch to keep</span>
+                <select
+                  value={keepGoalId ?? ""}
+                  onChange={(event) => setKeepGoalId(event.target.value || null)}
+                  className="mt-1.5 w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm font-semibold text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue/10"
+                >
+                  {childBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.title}{branch.workflowCount > 0 ? ` · ${branch.workflowCount} workflow${branch.workflowCount === 1 ? "" : "s"}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </fieldset>
+        ) : null}
         <label className="mt-5 block">
           <span className="text-sm font-semibold">Type <span className="rounded-md bg-wash px-1.5 py-0.5 font-mono text-[0.8125rem]">confirm</span> to continue</span>
           <input
@@ -83,12 +143,12 @@ function DeleteBranchDialog({ goalTitle, workflowCount, isDeleting, onClose, onC
           </button>
           <button
             type="button"
-            onClick={onConfirm}
-            disabled={!confirmed || isDeleting}
+            onClick={() => onConfirm({ scope: showBranchOptions ? scope : "all", keepGoalId: showBranchOptions && scope === "keep-one" ? keepGoalId : null })}
+            disabled={!canConfirm}
             aria-busy={isDeleting}
             className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDeleting ? "Deleting…" : "Delete branch"}
+            {isDeleting ? "Deleting…" : `Delete ${noun}`}
           </button>
         </div>
       </section>
@@ -105,7 +165,7 @@ function GoalDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isBranch = !!goal?.parentGoalId;
-  const childBranchCount = goal ? goals.filter((item) => item.parentGoalId === goal.id).length : 0;
+  const childBranches = goal ? goals.filter((item) => item.parentGoalId === goal.id).map((item) => ({ id: item.id, title: item.title, workflowCount: item.workflowCount })) : [];
 
   useEffect(() => {
     setDeleteOpen(false);
@@ -116,11 +176,36 @@ function GoalDetailPage() {
     void navigate({ to: "/app/goals/new", search: { edit: goal.id } });
   }
 
-  async function handleDelete() {
+  async function handleDelete(decision: BranchDeleteDecision) {
     if (!goal || isDeleting) return;
     const noun = goal.parentGoalId ? "branch" : "goal";
     setIsDeleting(true);
     try {
+      if (!goal.parentGoalId && childBranches.length > 0) {
+        if (decision.scope === "keep-one" && decision.keepGoalId) {
+          const { error: promoteError } = await updateGoalParent({ ownerId: user.id, goalId: decision.keepGoalId, parentGoalId: null });
+          if (promoteError) {
+            toast.error("The branch could not be promoted.", { description: promoteError });
+            return;
+          }
+          for (const child of childBranches) {
+            if (child.id === decision.keepGoalId) continue;
+            const { error: moveError } = await updateGoalParent({ ownerId: user.id, goalId: child.id, parentGoalId: decision.keepGoalId });
+            if (moveError) {
+              toast.error(`“${child.title}” could not be moved.`, { description: moveError });
+              return;
+            }
+          }
+        } else {
+          for (const child of childBranches) {
+            const { error: childError } = await deleteGoal({ ownerId: user.id, goalId: child.id });
+            if (childError) {
+              toast.error(`“${child.title}” could not be deleted.`, { description: childError });
+              return;
+            }
+          }
+        }
+      }
       const { error } = await deleteGoal({ ownerId: user.id, goalId: goal.id });
       if (error) {
         toast.error(`The ${noun} could not be deleted.`, { description: error });
@@ -187,10 +272,10 @@ function GoalDetailPage() {
           noun={isBranch ? "branch" : "goal"}
           goalTitle={goal.title}
           workflowCount={goal.workflowCount}
-          childBranchCount={childBranchCount}
+          childBranches={childBranches}
           isDeleting={isDeleting}
           onClose={() => setDeleteOpen(false)}
-          onConfirm={() => void handleDelete()}
+          onConfirm={(decision) => void handleDelete(decision)}
         />
       ) : null}
     </section>

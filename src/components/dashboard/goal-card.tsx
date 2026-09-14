@@ -235,6 +235,8 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const total = goal.milestones.length;
+  const visibleMilestones = goal.milestones.slice(0, 10);
+  const hiddenCount = total - visibleMilestones.length;
 
   return (
     <span
@@ -273,15 +275,20 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
             No milestones yet. Add checkpoints when you create the goal to track progress here.
           </span>
         ) : (
-          <ol className="mt-3 max-h-64 space-y-2 overflow-y-auto pl-6 marker:text-muted list-[lower-roman]">
-            {goal.milestones.map((milestone, index) => (
-              <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-5">
-                <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                  {milestone.title}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <>
+            <ol className="mt-3 space-y-2 pl-6 marker:text-muted list-[lower-roman]">
+              {visibleMilestones.map((milestone, index) => (
+                <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-5">
+                  <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
+                    {milestone.title}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            {hiddenCount > 0 ? (
+              <p className="mt-2 text-xs text-muted">+{hiddenCount} more — open the goal to see all</p>
+            ) : null}
+          </>
         )}
       </span>
     </span>
