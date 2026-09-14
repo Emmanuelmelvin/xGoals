@@ -112,11 +112,10 @@ function NewGoalPage() {
     if (isSaving) return;
     const cleanMilestones = milestones.map((milestone) => milestone.trim()).filter((milestone) => milestone.length >= MILESTONE_MIN_LENGTH);
     if (!title.trim() || !description.trim() || cleanMilestones.length === 0) {
-      setError(`Finish the details and add at least one milestone (${MILESTONE_MIN_LENGTH}–${MILESTONE_MAX_LENGTH} characters) before creating the goal.`);
+      toast.error("Finish the details and add at least one milestone before creating the goal.");
       return;
     }
     setIsSaving(true);
-    setError(null);
     try {
       const result = await createGoal({
         ownerId: user.id,
@@ -127,7 +126,6 @@ function NewGoalPage() {
       });
       if (!result.id) {
         const message = result.error ?? "The goal could not be created.";
-        setError(message);
         toast.error("The goal could not be created.", { description: message });
         return;
       }
@@ -138,7 +136,6 @@ function NewGoalPage() {
       void navigate({ to: "/app/goals", search: goalsSearch });
     } catch (err) {
       const message = err instanceof Error ? err.message : "The goal could not be created.";
-      setError(message);
       toast.error("The goal could not be created.", { description: message });
     } finally {
       setIsSaving(false);
@@ -294,12 +291,6 @@ function NewGoalPage() {
             </section>
           ) : null}
 
-          {error ? (
-            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700" role="alert">
-              {error}
-            </p>
-          ) : null}
-
           <section className="mt-6 flex items-center justify-between gap-2 pt-4">
             {step === 0 ? (
               <Link
@@ -312,10 +303,7 @@ function NewGoalPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => {
-                  setError(null);
-                  setStep(step - 1);
-                }}
+                onClick={() => setStep(step - 1)}
                 className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
               >
                 Back
