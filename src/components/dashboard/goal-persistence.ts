@@ -1,14 +1,14 @@
 import { createClient } from "../../lib/supabase/client";
-import type { Goal, GoalStatus } from "./types";
+import type { Deployment, DeploymentStatus, Goal } from "./types";
 
-export function isGoalStatus(value: unknown): value is GoalStatus {
-  return value === "active" || value === "draft" || value === "paused" || value === "completed";
+export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
+  return value === "running" || value === "paused" || value === "stopped";
 }
 
 export async function loadGoalsForUser(ownerId: string) {
   const supabase = createClient();
   const [{ data: goalRows, error: goalsError }, { data: workflowRows, error: workflowsError }] = await Promise.all([
-    supabase.from("goals").select("id,title,status,updated_at").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
+    supabase.from("goals").select("id,title,updated_at").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
     supabase.from("workflows").select("goal_id").eq("owner_id", ownerId),
   ]);
 
@@ -24,9 +24,29 @@ export async function loadGoalsForUser(ownerId: string) {
     goals: (goalRows ?? []).map((goal) => ({
       id: goal.id,
       title: goal.title,
-      status: isGoalStatus(goal.status) ? goal.status : "draft",
       workflowCount: workflowCounts.get(goal.id) ?? 0,
       updatedAt: new Date(goal.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    })),
+    error: null,
+  };
+}
+
+export async function loadDeploymentsForUser(ownerId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("workflows")
+    .select("id,goal_id,name,status")
+    .eq("owner_id", ownerId)
+    .order("updated_at", { ascending: false });
+
+  if (error) return { deployments: [] as Deployment[], error: error.message };
+
+  return {
+    deployments: (data ?? []).map((row) => ({
+      id: row.id,
+      goalId: row.goal_id,
+      name: row.name,
+      status: isDeploymentStatus(row.status) ? row.status : "stopped",
     })),
     error: null,
   };
@@ -97,13 +117,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
-export type GoalCreationMode = "draft" | "active";
+export type GoalCreationMode = "goal" | "deploy";
 
-export async function createGoal({ ownerId, title, description, milestones, permissions, mode = "draft" }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; mode?: GoalCreationMode }) {
+export async function createGoal({ ownerId, title, description, milestones, permissions }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[] }) {
   const supabase = createClient();
   const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, status: mode })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones } })
     .select("id")
     .single();
 
@@ -117,4 +137,18 @@ export async function createGoal({ ownerId, title, description, milestones, perm
   }
 
   return { id: goal.id as string, error: null as string | null };
+}
+
+export async function createDeployment({ ownerId, goalId, name, milestones, permissions }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[] }) {
+  const supabase = createClient();
+  const { error } = await supabase.from("workflows").insert({
+    goal_id: goalId,
+    owner_id: ownerId,
+    name,
+    status: "running",
+    definition: { version: 1, milestones, permissions, approval_required: true },
+  });
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
 }

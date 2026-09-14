@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/client";
@@ -7,9 +7,9 @@ import { Tooltip } from "./tooltip";
 import { loadGoalsForUser } from "./dashboard/goal-persistence";
 import { OnboardingPage } from "./dashboard/onboarding-page";
 import { WorkspaceSidebar } from "./dashboard/workspace-sidebar";
-import type { DashboardContextValue, DrawerState, Goal, GoalFilter, UserSummary } from "./dashboard/types";
+import type { DashboardContextValue, DrawerState, Goal, UserSummary } from "./dashboard/types";
 
-export type { DrawerState, Goal, GoalFilter, UserSummary } from "./dashboard/types";
+export type { Deployment, DeploymentStatus, DrawerState, Goal, UserSummary } from "./dashboard/types";
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
 
@@ -59,11 +59,9 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   const navigate = useNavigate();
   const location = useLocation();
   const drawerOpen = drawer !== "closed";
-  const [filter, setFilter] = useState<GoalFilter>("all");
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isGoalsLoading, setIsGoalsLoading] = useState(true);
   const [goalError, setGoalError] = useState<string | null>(null);
-  const visibleGoals = useMemo(() => filter === "all" ? goals : goals.filter((goal) => goal.status === filter), [filter, goals]);
 
   async function refreshGoals() {
     setIsGoalsLoading(true);
@@ -97,7 +95,7 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
 
   async function signOut() { await createClient().auth.signOut(); }
 
-  const contextValue: DashboardContextValue = { user, goals, visibleGoals, isGoalsLoading, goalError, filter, setFilter, refreshGoals, openCreateGoal: openGoalCreation };
+  const contextValue: DashboardContextValue = { user, goals, isGoalsLoading, goalError, refreshGoals, openCreateGoal: openGoalCreation };
   return <DashboardContext.Provider
     value={contextValue}><main className="relative flex min-h-screen overflow-x-hidden bg-wash text-ink">
       <button

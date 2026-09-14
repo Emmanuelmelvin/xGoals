@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { PERMISSION_GROUPS, createGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
+import { PERMISSION_GROUPS, createDeployment, createGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
 import { ChevronDownIcon, PlusIcon, TrashIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
@@ -136,26 +136,43 @@ function NewGoalPage() {
     setIsSaving(true);
     setDeployMenuOpen(false);
     try {
+      const cleanTitle = title.trim();
       const result = await createGoal({
         ownerId: user.id,
-        title: title.trim(),
+        title: cleanTitle,
         description: description.trim(),
         milestones: cleanMilestones,
         permissions: granted,
-        mode,
       });
       if (!result.id) {
         const message = result.error ?? "The goal could not be created.";
         toast.error("The goal could not be created.", { description: message });
         return;
       }
+      if (mode === "deploy") {
+        const deployment = await createDeployment({
+          ownerId: user.id,
+          goalId: result.id,
+          name: cleanTitle,
+          milestones: cleanMilestones,
+          permissions: granted,
+        });
+        if (deployment.error) {
+          toast.warning("Goal created, but the deployment failed.", { description: deployment.error });
+          void navigate({ to: "/app/goals", search: goalsSearch });
+          return;
+        }
+      }
       await refreshGoals();
+      if (mode === "deploy") {
+        toast.success("Deployment running", {
+          description: result.error ? `Saved, but ${result.error}` : "Your goal is live and its deployment is running.",
+        });
+        void navigate({ to: "/app/workflows", search: goalsSearch });
+        return;
+      }
       toast.success("Goal created", {
-        description: result.error
-          ? `Saved, but ${result.error}`
-          : mode === "active"
-            ? "Your goal is active and ready for deployment."
-            : "Your milestones and permissions are saved as a draft.",
+        description: result.error ? `Saved, but ${result.error}` : "Your milestones and permissions are saved.",
       });
       void navigate({ to: "/app/goals", search: goalsSearch });
     } catch (err) {
@@ -348,7 +365,7 @@ function NewGoalPage() {
                 <div className="flex">
                   <button
                     type="button"
-                    onClick={() => void handleCreate("draft")}
+                      onClick={() => void handleCreate("goal")}
                     disabled={isSaving}
                     aria-busy={isSaving}
                     className="inline-flex items-center gap-2 rounded-l-xl rounded-r-none bg-blue px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
@@ -372,20 +389,20 @@ function NewGoalPage() {
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => void handleCreate("draft")}
+                    onClick={() => void handleCreate("goal")}
                       className="block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
                     >
                       <span className="block text-sm font-bold">Create goal</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-muted">Save milestones and permissions as a draft.</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-muted">Save milestones and permissions without deploying.</span>
                     </button>
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => void handleCreate("active")}
+                      onClick={() => void handleCreate("deploy")}
                       className="mt-1 block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
                     >
                       <span className="block text-sm font-bold">Create goal and run deployment</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-muted">Activate the goal so deployment can run from it.</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-muted">Create the goal and start a running deployment from it.</span>
                     </button>
                   </div>
                 ) : null}

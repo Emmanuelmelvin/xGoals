@@ -1,15 +1,22 @@
 import type { ReactNode } from "react";
 
 export type DrawerState = "open" | "closed";
-export type GoalStatus = "active" | "draft" | "paused" | "completed";
-export type GoalFilter = "all" | GoalStatus;
+
+/** Lifecycle of a deployment (a workflow running from a goal). */
+export type DeploymentStatus = "running" | "paused" | "stopped";
 
 export type Goal = {
   id: string;
   title: string;
-  status: GoalStatus;
   workflowCount: number;
   updatedAt: string;
+};
+
+export type Deployment = {
+  id: string;
+  goalId: string;
+  name: string;
+  status: DeploymentStatus;
 };
 
 export type UserSummary = {
@@ -24,21 +31,10 @@ export type UserSummary = {
 export type DashboardContextValue = {
   user: UserSummary;
   goals: Goal[];
-  visibleGoals: Goal[];
   isGoalsLoading: boolean;
   goalError: string | null;
-  filter: GoalFilter;
-  setFilter: (filter: GoalFilter) => void;
   refreshGoals: () => Promise<void>;
   openCreateGoal: () => void;
 };
-
-export const goalFilterOptions: Array<{ value: GoalFilter; label: string }> = [
-  { value: "all", label: "All goals" },
-  { value: "active", label: "Active" },
-  { value: "draft", label: "Drafts" },
-  { value: "paused", label: "Paused" },
-  { value: "completed", label: "Completed" },
-];
 
 export type IconProps = { children: ReactNode; className?: string };
