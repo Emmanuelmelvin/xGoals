@@ -92,7 +92,7 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   }
 
   function openGoalCreation() {
-    void navigate({ to: "/app/review", search: drawer ? { drawer } : {} });
+    void navigate({ to: "/app/goals/new", search: drawer ? { drawer } : {} });
   }
 
   async function signOut() { await createClient().auth.signOut(); }

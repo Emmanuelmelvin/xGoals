@@ -140,7 +140,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         </Link>
       </nav>
 
-      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
+      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white">
         <PlusIcon />New goal
       </button>
 

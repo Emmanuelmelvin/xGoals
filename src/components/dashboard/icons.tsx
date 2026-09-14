@@ -20,6 +20,10 @@ export function PlusIcon() {
   return <Icon className="size-4"><path d="M12 5v14M5 12h14" /></Icon>;
 }
 
+export function TrashIcon() {
+  return <Icon className="size-4"><path d="M4 7h16" /><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /><path d="M6.5 7l1 13h9l1-13" /><path d="M10 11v6M14 11v6" /></Icon>;
+}
+
 export function GridIcon() {
   return <Icon><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></Icon>;
 }

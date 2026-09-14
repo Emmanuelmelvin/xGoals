@@ -15,9 +15,10 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppCreditsRouteImport } from './routes/app.credits'
 import { Route as AppGoalsRouteImport } from './routes/app.goals'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
-import { Route as AppReviewRouteImport } from './routes/app.review'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
+import { Route as AppGoalsNewRouteImport } from './routes/app.goals.new'
 import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -50,11 +51,6 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReviewRoute = AppReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
   id: '/workflows',
   path: '/workflows',
@@ -64,6 +60,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppGoalsRoute,
+} as any)
+const AppGoalsNewRoute = AppGoalsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppGoalsRoute,
 } as any)
 const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
   id: '/workflow/$workflowId',
@@ -75,37 +81,39 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/app/credits': typeof AppCreditsRoute
-  '/app/goals': typeof AppGoalsRoute
+  '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
-  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/goals/': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/credits': typeof AppCreditsRoute
-  '/app/goals': typeof AppGoalsRoute
   '/app/profile': typeof AppProfileRoute
-  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
+  '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/goals': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/app/credits': typeof AppCreditsRoute
-  '/app/goals': typeof AppGoalsRoute
+  '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
-  '/app/review': typeof AppReviewRoute
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/goals/': typeof AppGoalsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,22 +123,23 @@ export interface FileRouteTypes {
     | '/app/credits'
     | '/app/goals'
     | '/app/profile'
-    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
+    | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/goals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app/credits'
-    | '/app/goals'
     | '/app/profile'
-    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app'
+    | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/goals'
   id:
     | '__root__'
     | '/'
@@ -138,11 +147,12 @@ export interface FileRouteTypes {
     | '/app/credits'
     | '/app/goals'
     | '/app/profile'
-    | '/app/review'
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
+    | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/goals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,13 +205,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/review': {
-      id: '/app/review'
-      path: '/review'
-      fullPath: '/app/review'
-      preLoaderRoute: typeof AppReviewRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/workflows': {
       id: '/app/workflows'
       path: '/workflows'
@@ -216,6 +219,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/goals/': {
+      id: '/app/goals/'
+      path: '/'
+      fullPath: '/app/goals/'
+      preLoaderRoute: typeof AppGoalsIndexRouteImport
+      parentRoute: typeof AppGoalsRoute
+    }
+    '/app/goals/new': {
+      id: '/app/goals/new'
+      path: '/new'
+      fullPath: '/app/goals/new'
+      preLoaderRoute: typeof AppGoalsNewRouteImport
+      parentRoute: typeof AppGoalsRoute
+    }
     '/app/workflow/$workflowId': {
       id: '/app/workflow/$workflowId'
       path: '/workflow/$workflowId'
@@ -226,11 +243,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppGoalsRouteChildren {
+  AppGoalsNewRoute: typeof AppGoalsNewRoute
+  AppGoalsIndexRoute: typeof AppGoalsIndexRoute
+}
+
+const AppGoalsRouteChildren: AppGoalsRouteChildren = {
+  AppGoalsNewRoute: AppGoalsNewRoute,
+  AppGoalsIndexRoute: AppGoalsIndexRoute,
+}
+
+const AppGoalsRouteWithChildren = AppGoalsRoute._addFileChildren(
+  AppGoalsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppCreditsRoute: typeof AppCreditsRoute
-  AppGoalsRoute: typeof AppGoalsRoute
+  AppGoalsRoute: typeof AppGoalsRouteWithChildren
   AppProfileRoute: typeof AppProfileRoute
-  AppReviewRoute: typeof AppReviewRoute
   AppWorkflowsRoute: typeof AppWorkflowsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppWorkflowWorkflowIdRoute: typeof AppWorkflowWorkflowIdRoute
@@ -238,9 +268,8 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppCreditsRoute: AppCreditsRoute,
-  AppGoalsRoute: AppGoalsRoute,
+  AppGoalsRoute: AppGoalsRouteWithChildren,
   AppProfileRoute: AppProfileRoute,
-  AppReviewRoute: AppReviewRoute,
   AppWorkflowsRoute: AppWorkflowsRoute,
   AppIndexRoute: AppIndexRoute,
   AppWorkflowWorkflowIdRoute: AppWorkflowWorkflowIdRoute,

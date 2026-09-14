@@ -1,6 +1,5 @@
 import { createClient } from "../../lib/supabase/client";
 import type { Goal, GoalStatus } from "./types";
-import type { GoalAnalysis } from "../../lib/ai/agent-server-fns";
 
 export function isGoalStatus(value: unknown): value is GoalStatus {
   return value === "active" || value === "draft" || value === "paused" || value === "completed";
@@ -33,101 +32,63 @@ export async function loadGoalsForUser(ownerId: string) {
   };
 }
 
-export type GoalCreationMode = "goal" | "deploy" | "schedule";
-
-export type GoalDraft = {
-  id: string;
-  title: string;
-  prompt: string;
-  analysis: GoalAnalysis;
+export type PermissionCatalogEntry = {
+  permission: string;
+  label: string;
+  description: string;
 };
 
-export async function createGoalDraft({ ownerId, title, prompt, analysis }: { ownerId: string; title: string; prompt: string; analysis: GoalAnalysis }) {
+export type PermissionGroup = {
+  title: string;
+  entries: PermissionCatalogEntry[];
+};
+
+/** Mirrors the agent's allowed permission catalog (see agent/main.py). */
+export const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    title: "Your account",
+    entries: [
+      { permission: "profile:read", label: "Read your profile", description: "Let the agent see your X profile details." },
+      { permission: "profile:update", label: "Update your profile", description: "Let the agent change your display name, bio, or avatar." },
+    ],
+  },
+  {
+    title: "Posts and drafts",
+    entries: [
+      { permission: "posts:read", label: "Read posts", description: "Let the agent read your posts and drafts." },
+      { permission: "posts:draft:create", label: "Create drafts", description: "Let the agent prepare draft posts for your review." },
+      { permission: "posts:draft:update", label: "Edit drafts", description: "Let the agent revise drafts before you approve them." },
+      { permission: "posts:draft:delete", label: "Delete drafts", description: "Let the agent discard drafts you no longer need." },
+      { permission: "posts:create", label: "Publish posts", description: "Let the agent publish posts to your account." },
+      { permission: "posts:delete", label: "Delete posts", description: "Let the agent remove published posts." },
+    ],
+  },
+  {
+    title: "Insights",
+    entries: [
+      { permission: "mentions:read", label: "Read mentions", description: "Let the agent see posts that mention you." },
+      { permission: "analytics:read", label: "Read analytics", description: "Let the agent see how your posts perform." },
+      { permission: "search:read", label: "Search X", description: "Let the agent search public posts for research." },
+    ],
+  },
+];
+
+export async function createGoal({ ownerId, title, description, milestones, permissions }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[] }) {
   const supabase = createClient();
-  const { data, error } = await supabase
+  const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt, plan: analysis, status: "draft" })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, status: "draft" })
     .select("id")
     .single();
 
-  return { id: data?.id ?? null, error: error?.message ?? null };
-}
+  if (goalError || !goal) return { id: null as string | null, error: goalError?.message ?? "The goal could not be created." };
 
-export async function loadGoalDraft({ ownerId, goalId }: { ownerId: string; goalId: string }) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("goals")
-    .select("id,title,prompt,plan")
-    .eq("id", goalId)
-    .eq("owner_id", ownerId)
-    .maybeSingle();
-
-  if (error || !data) return { data: null, error: error?.message ?? "That goal draft could not be found." };
-
-  return {
-    data: {
-      id: data.id,
-      title: data.title,
-      prompt: data.prompt ?? "",
-      analysis: data.plan as GoalAnalysis,
-    } satisfies GoalDraft,
-    error: null,
-  };
-}
-
-export async function saveGoalReview({ goalId, ownerId, title, prompt, analysis, mode, scheduledFor }: { goalId: string; ownerId: string; title: string; prompt: string; analysis: GoalAnalysis; mode: GoalCreationMode; scheduledFor: string }) {
-  const supabase = createClient();
-  const plan = { ...analysis, execution_mode: mode, scheduled_for: mode === "schedule" ? scheduledFor : null };
-  const { data, error } = await supabase
-    .from("goals")
-    .update({ title, prompt, plan, status: mode === "goal" ? "draft" : "active" })
-    .eq("id", goalId)
-    .eq("owner_id", ownerId)
-    .select("id,title,status,updated_at")
-    .single();
-
-  if (error || !data) return { data: null, error: error?.message ?? "The goal could not be saved." };
-
-  let saveErrorMessage: string | null = null;
-  const { error: clearPermissionsError } = await supabase.from("goal_permissions").delete().eq("goal_id", goalId).eq("owner_id", ownerId);
-  if (clearPermissionsError) saveErrorMessage = clearPermissionsError.message;
-
-  if (analysis.permissions.length > 0) {
-    const { error: permissionsError } = await supabase.from("goal_permissions").insert(analysis.permissions.map((suggestion) => ({ goal_id: data.id, owner_id: ownerId, permission: suggestion.permission, reason: suggestion.reason, decision: suggestion.decision, source: suggestion.decision === "review" ? "ai" : "user" })));
-    if (permissionsError) saveErrorMessage = permissionsError.message;
+  if (permissions.length > 0) {
+    const { error: permissionsError } = await supabase.from("goal_permissions").insert(
+      permissions.map((permission) => ({ goal_id: goal.id, owner_id: ownerId, permission, decision: "allow", source: "user", reason: "" })),
+    );
+    if (permissionsError) return { id: goal.id as string, error: permissionsError.message };
   }
 
-  const { error: clearWorkflowsError } = await supabase.from("workflows").delete().eq("goal_id", goalId).eq("owner_id", ownerId);
-  if (clearWorkflowsError) saveErrorMessage = clearWorkflowsError.message;
-
-  if (mode !== "goal" && analysis.workflow_suggestions.length > 0) {
-    const { error: workflowsError } = await supabase.from("workflows").insert(analysis.workflow_suggestions.map((workflow) => ({
-      goal_id: data.id,
-      owner_id: ownerId,
-      name: workflow.name,
-      status: mode === "deploy" ? "deployed" : "draft",
-      definition: {
-        description: workflow.description,
-        trigger: workflow.trigger,
-        actions: workflow.actions,
-        cadence: workflow.cadence,
-        run_count: workflow.run_count,
-        goal_run_plan: analysis.run_plan,
-        execution_mode: mode,
-        scheduled_for: mode === "schedule" ? scheduledFor : null,
-        approval_required: true,
-      },
-    })));
-    if (workflowsError) saveErrorMessage = workflowsError.message;
-  }
-
-  return {
-    data: {
-      ...data,
-      status: isGoalStatus(data.status) ? data.status : "draft",
-      workflowCount: mode === "goal" ? 0 : analysis.workflow_suggestions.length,
-      updatedAt: "Just now",
-    } satisfies Goal,
-    error: saveErrorMessage,
-  };
+  return { id: goal.id as string, error: null as string | null };
 }
