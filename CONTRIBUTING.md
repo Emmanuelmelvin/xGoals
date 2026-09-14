@@ -52,4 +52,4 @@ Reviews focus on user impact, security, data access, maintainability, authentici
 
 ## License
 
-By submitting a contribution, you agree that it may be distributed under the repository’s [GNU Affero General Public License version 3](LICENSE), identified by SPDX as `AGPL-3.0-only`. You confirm that you have the right to submit the contribution under that license.
+By submitting a contribution, you agree that it may be distributed under the repository’s [MIT License](LICENSE), identified by SPDX as `MIT`. You confirm that you have the right to submit the contribution under that license.

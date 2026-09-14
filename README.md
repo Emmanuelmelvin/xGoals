@@ -124,6 +124,6 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and fo
 
 ## License
 
-xGoal is free software licensed under the [GNU Affero General Public License version 3](LICENSE), SPDX identifier `AGPL-3.0-only`.
+xGoal is free software licensed under the [MIT License](LICENSE), SPDX identifier `MIT`.
 
 Copyright © 2026 Emmanuel Chidi.
