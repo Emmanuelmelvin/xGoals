@@ -97,7 +97,7 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
 
   const contextValue: DashboardContextValue = { user, goals, isGoalsLoading, goalError, refreshGoals, openCreateGoal: openGoalCreation };
   return <DashboardContext.Provider
-    value={contextValue}><main className="relative flex min-h-screen overflow-x-hidden bg-wash text-ink">
+    value={contextValue}><main className="relative flex min-h-screen overflow-x-clip bg-wash text-ink">
       <button
         type="button"
         onClick={toggleDrawer}

@@ -8,7 +8,7 @@ export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
 export async function loadGoalsForUser(ownerId: string) {
   const supabase = createClient();
   const [{ data: goalRows, error: goalsError }, { data: workflowRows, error: workflowsError }] = await Promise.all([
-    supabase.from("goals").select("id,title,updated_at,plan,parent_goal_id").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
+    supabase.from("goals").select("id,title,updated_at,plan,parent_goal_id,prompt").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
     supabase.from("workflows").select("goal_id,status").eq("owner_id", ownerId),
   ]);
 
@@ -66,6 +66,8 @@ export async function loadGoalsForUser(ownerId: string) {
     goals: (goalRows ?? []).map((goal) => ({
       id: goal.id,
       title: goal.title,
+      description: typeof goal.prompt === "string" && goal.prompt.trim() ? goal.prompt : null,
+      parentGoalId: typeof goal.parent_goal_id === "string" && goal.parent_goal_id ? goal.parent_goal_id : null,
       workflowCount: workflowCounts.get(goal.id) ?? 0,
       workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, stopped: 0 },
       branchCount: branchCounts.get(goal.id) ?? 0,
@@ -93,6 +95,24 @@ export async function loadDeploymentsForUser(ownerId: string) {
       name: row.name,
       status: isDeploymentStatus(row.status) ? row.status : "stopped",
     })),
+    error: null,
+  };
+}
+
+export async function loadGoalPermissions(ownerId: string, goalId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goal_permissions")
+    .select("permission")
+    .eq("owner_id", ownerId)
+    .eq("goal_id", goalId);
+
+  if (error) return { permissions: [] as string[], error: error.message };
+
+  return {
+    permissions: (data ?? [])
+      .map((row) => row.permission)
+      .filter((permission): permission is string => typeof permission === "string"),
     error: null,
   };
 }

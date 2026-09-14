@@ -18,6 +18,7 @@ import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
+import { Route as AppGoalsGoalIdRouteImport } from './routes/app.goals.$goalId'
 import { Route as AppGoalsNewRouteImport } from './routes/app.goals.new'
 import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
 
@@ -66,6 +67,11 @@ const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppGoalsRoute,
 } as any)
+const AppGoalsGoalIdRoute = AppGoalsGoalIdRouteImport.update({
+  id: '/$goalId',
+  path: '/$goalId',
+  getParentRoute: () => AppGoalsRoute,
+} as any)
 const AppGoalsNewRoute = AppGoalsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals/': typeof AppGoalsIndexRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
+  '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals': typeof AppGoalsIndexRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals/': typeof AppGoalsIndexRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
+    | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals/'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/app/workflows'
     | '/auth/callback'
     | '/app'
+    | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/app/workflows'
     | '/auth/callback'
     | '/app/'
+    | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals/'
@@ -226,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIndexRouteImport
       parentRoute: typeof AppGoalsRoute
     }
+    '/app/goals/$goalId': {
+      id: '/app/goals/$goalId'
+      path: '/$goalId'
+      fullPath: '/app/goals/$goalId'
+      preLoaderRoute: typeof AppGoalsGoalIdRouteImport
+      parentRoute: typeof AppGoalsRoute
+    }
     '/app/goals/new': {
       id: '/app/goals/new'
       path: '/new'
@@ -244,11 +263,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppGoalsRouteChildren {
+  AppGoalsGoalIdRoute: typeof AppGoalsGoalIdRoute
   AppGoalsNewRoute: typeof AppGoalsNewRoute
   AppGoalsIndexRoute: typeof AppGoalsIndexRoute
 }
 
 const AppGoalsRouteChildren: AppGoalsRouteChildren = {
+  AppGoalsGoalIdRoute: AppGoalsGoalIdRoute,
   AppGoalsNewRoute: AppGoalsNewRoute,
   AppGoalsIndexRoute: AppGoalsIndexRoute,
 }

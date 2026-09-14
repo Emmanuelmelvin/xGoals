@@ -185,7 +185,7 @@ function NewGoalPage() {
 
   return (
     <section className="min-h-screen bg-paper">
-      <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur sm:px-8">
+      <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper px-5 py-3 sm:px-8">
         <Link to="/app/goals" search={goalsSearch} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink">
           <ArrowLeftIcon /> Goals
         </Link>

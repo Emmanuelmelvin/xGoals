@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Circle, CircleCheck, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { Tooltip } from "../tooltip";
 import { useToast } from "../toast";
 import { useDashboard } from "../dashboard-layout";
@@ -16,6 +16,24 @@ function StatusDot({ tone }: { tone: "running" | "paused" | "stopped" }) {
   const toneClass =
     tone === "running" ? "bg-emerald-500" : tone === "paused" ? "bg-amber-500" : "bg-slate-400";
   return <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${toneClass}`} />;
+}
+
+export function WorkflowStatusSummary({ goal }: { goal: Goal }) {
+  const items = [
+    { key: "running", label: "Running", count: goal.workflows.running },
+    { key: "paused", label: "Paused", count: goal.workflows.paused },
+    { key: "stopped", label: "Stopped", count: goal.workflows.stopped },
+  ] as const;
+  return (
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+      {items.map((item) => (
+        <span key={item.key} className="inline-flex items-center gap-1.5">
+          <StatusDot tone={item.key} />
+          <span className="font-semibold tabular-nums text-ink">{item.count}</span> {item.label}
+        </span>
+      ))}
+    </p>
+  );
 }
 
 function WorkflowBreakdown({ goal }: { goal: Goal }) {
@@ -52,11 +70,11 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
         role="dialog"
         aria-label={`Workflow status for ${goal.title}`}
         id={panelId}
-        className={`absolute bottom-full left-0 z-30 mb-2 w-60 rounded-2xl border border-line bg-white p-4 text-left shadow-lg transition-opacity duration-150 motion-reduce:transition-none ${
+        className={`absolute bottom-full left-0 z-30 mb-2 w-60 rounded-2xl border border-line bg-white p-4 text-left text-sm text-ink shadow-lg transition-opacity duration-150 motion-reduce:transition-none ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <span className="block text-xs font-bold uppercase tracking-[0.14em] text-muted">
+        <span className="block text-sm font-semibold tracking-[-0.02em] text-ink">
           Workflows · {goal.workflowCount}
         </span>
         {goal.workflowCount === 0 ? (
@@ -66,13 +84,13 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
         ) : (
           <ul className="mt-3 space-y-2">
             {rows.map((row) => (
-              <li key={row.key} className="flex items-center gap-2.5 text-sm">
+              <li key={row.key} className="flex items-center gap-2.5">
                 <StatusDot tone={row.key} />
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-ink">{row.label}</span>
-                  <span className="block text-xs text-muted">{row.detail}</span>
+                  <span className="block text-sm font-medium text-ink">{row.label}</span>
+                  <span className="mt-0.5 block text-xs leading-5 text-muted">{row.detail}</span>
                 </span>
-                <span className="text-sm font-bold tabular-nums text-ink">{row.count}</span>
+                <span className="text-sm font-semibold tabular-nums text-ink">{row.count}</span>
               </li>
             ))}
           </ul>
@@ -105,14 +123,14 @@ export function GoalCardMeta({ goal }: { goal: Goal }) {
   );
 }
 
-export function GoalCardActions({ goal }: { goal: Goal }) {
-  const { user, refreshGoals, openCreateGoal } = useDashboard();
+export function useCreateWorkflow(goal: Goal) {
+  const { user, refreshGoals } = useDashboard();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isDeploying, setIsDeploying] = useState(false);
 
-  async function handleCreateWorkflow() {
-    if (isDeploying) return;
+  async function createWorkflow() {
+    if (isDeploying) return false;
     setIsDeploying(true);
     try {
       const { error } = await createDeployment({
@@ -124,19 +142,28 @@ export function GoalCardActions({ goal }: { goal: Goal }) {
       });
       if (error) {
         toast.error("The workflow could not be created.", { description: error });
-        return;
+        return false;
       }
       await refreshGoals();
       toast.success("Workflow running", { description: `A running workflow was created from “${goal.title}”.` });
       void navigate({ to: "/app/workflows" });
+      return true;
     } catch (err) {
       toast.error("The workflow could not be created.", {
         description: err instanceof Error ? err.message : undefined,
       });
+      return false;
     } finally {
       setIsDeploying(false);
     }
   }
+
+  return { createWorkflow, isDeploying };
+}
+
+export function GoalCardActions({ goal }: { goal: Goal }) {
+  const { openCreateGoal } = useDashboard();
+  const { createWorkflow, isDeploying } = useCreateWorkflow(goal);
 
   return (
     <span className="flex shrink-0 items-center gap-2">
@@ -153,7 +180,7 @@ export function GoalCardActions({ goal }: { goal: Goal }) {
       <Tooltip label="Create workflow">
         <button
           type="button"
-          onClick={() => void handleCreateWorkflow()}
+          onClick={() => void createWorkflow()}
           disabled={isDeploying}
           aria-busy={isDeploying}
           aria-label={isDeploying ? `Creating workflow from ${goal.title}…` : `Create workflow from ${goal.title}`}
@@ -174,7 +201,6 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const total = goal.milestones.length;
-  const completed = goal.milestones.filter((milestone) => milestone.completed).length;
 
   return (
     <span
@@ -186,7 +212,7 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
         type="button"
         aria-describedby={panelId}
         aria-expanded={open}
-        aria-label={`${completed} of ${total} ${pluralize(total, "milestone")} complete`}
+        aria-label={`${total} ${pluralize(total, "milestone")}`}
         onClick={() => setOpen(!open)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
@@ -201,36 +227,27 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
         role="dialog"
         aria-label={`Milestones for ${goal.title}`}
         id={panelId}
-        className={`absolute bottom-full left-0 z-30 mb-2 w-64 rounded-2xl border border-line bg-white p-4 text-left shadow-lg transition-opacity duration-150 motion-reduce:transition-none ${
+        className={`absolute bottom-full left-0 z-30 mb-2 w-64 rounded-2xl border border-line bg-white p-4 text-left text-sm text-ink shadow-lg transition-opacity duration-150 motion-reduce:transition-none ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <span className="block text-xs font-bold uppercase tracking-[0.14em] text-muted">
-          Milestones · {completed} of {total}
+        <span className="block text-sm font-semibold tracking-[-0.02em] text-ink">
+          Milestones
         </span>
         {total === 0 ? (
           <span className="mt-2 block text-xs leading-5 text-muted">
             No milestones yet. Add checkpoints when you create the goal to track progress here.
           </span>
         ) : (
-          <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+          <ol className="mt-3 max-h-64 space-y-2 overflow-y-auto pl-6 marker:text-muted list-[lower-roman]">
             {goal.milestones.map((milestone, index) => (
-              <li key={`${milestone.title}-${index}`} className="flex items-start gap-2.5 text-sm">
-                {milestone.completed ? (
-                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-500" aria-hidden="true" strokeWidth={1.8} />
-                ) : (
-                  <Circle className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" strokeWidth={1.8} />
-                )}
-                <span
-                  className={`min-w-0 flex-1 text-[0.8125rem] leading-5 ${
-                    milestone.completed ? "text-muted line-through" : "font-medium text-ink"
-                  }`}
-                >
+              <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-5">
+                <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
                   {milestone.title}
                 </span>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
       </span>
     </span>

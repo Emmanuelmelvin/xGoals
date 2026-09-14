@@ -17,6 +17,8 @@ export type Milestone = {
 export type Goal = {
   id: string;
   title: string;
+  description: string | null;
+  parentGoalId: string | null;
   workflowCount: number;
   workflows: WorkflowStatusBreakdown;
   branchCount: number;
