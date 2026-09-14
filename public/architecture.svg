@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+  <text x="80" y="90" font-family="Inter, system-ui, sans-serif" font-size="44" font-weight="700" fill="#10141C">xGoal — Architecture</text>
+  <text x="80" y="130" font-family="Inter, system-ui, sans-serif" font-size="22" fill="#64748B">Professional Agents · Strands Agents SDK · Draft-first, human approval</text>
+
+  <!-- User -->
+  <g>
+    <rect x="80" y="200" width="220" height="160" rx="20" fill="#10141C"/>
+    <text x="190" y="260" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#F8FAFC">User</text>
+    <text x="190" y="295" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">sets goal in</text>
+    <text x="190" y="320" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">plain English</text>
+  </g>
+
+  <!-- TanStack app -->
+  <g>
+    <rect x="380" y="200" width="320" height="160" rx="20" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="540" y="250" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#10141C">TanStack App</text>
+    <text x="540" y="282" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">goals · dashboard</text>
+    <text x="540" y="306" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">drafts · approval · publish</text>
+    <text x="540" y="330" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">React + Tailwind v4</text>
+  </g>
+
+  <!-- Supabase -->
+  <g>
+    <rect x="780" y="200" width="320" height="160" rx="20" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="940" y="250" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#10141C">Supabase</text>
+    <text x="940" y="282" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">Auth (Sign in with X)</text>
+    <text x="940" y="306" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">Postgres · RLS · job state</text>
+    <text x="940" y="330" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#64748B">server keys only</text>
+  </g>
+
+  <!-- Agent -->
+  <g>
+    <rect x="380" y="440" width="720" height="200" rx="20" fill="#2563EB"/>
+    <text x="740" y="490" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#FFFFFF">Agent service — FastAPI + Strands Agents SDK</text>
+    <text x="740" y="524" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#DBEAFE">plan · draft · evaluate progress · agent/providers.py</text>
+    <text x="740" y="556" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#FFFFFF">AI_PROVIDER switch → Ollama · Bedrock · OpenAI · Groq</text>
+    <text x="740" y="590" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#DBEAFE">/health · request logging · no browser secrets</text>
+  </g>
+
+  <!-- X API -->
+  <g>
+    <rect x="1180" y="200" width="340" height="440" rx="20" fill="#10141C"/>
+    <text x="1350" y="260" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="700" fill="#F8FAFC">X API</text>
+    <text x="1350" y="296" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">OAuth 2.0</text>
+    <text x="1350" y="322" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">least-privilege scopes</text>
+    <text x="1350" y="348" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">manual publish only</text>
+    <rect x="1220" y="390" width="260" height="60" rx="14" fill="none" stroke="#60A5FA" stroke-width="2" stroke-dasharray="8 6"/>
+    <text x="1350" y="426" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="19" font-weight="700" fill="#60A5FA">HUMAN APPROVAL GATE</text>
+    <text x="1350" y="500" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">draft → approved</text>
+    <text x="1350" y="526" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">→ published</text>
+    <text x="1350" y="560" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#CBD5E1">no autoposting</text>
+  </g>
+
+  <!-- Arrows -->
+  <g stroke="#2563EB" stroke-width="3" fill="none">
+    <line x1="300" y1="280" x2="375" y2="280"/>
+    <polygon points="375,272 391,280 375,288" fill="#2563EB" stroke="none"/>
+    <line x1="700" y1="280" x2="775" y2="280"/>
+    <polygon points="775,272 791,280 775,288" fill="#2563EB" stroke="none"/>
+    <line x1="940" y1="360" x2="940" y2="435"/>
+    <polygon points="932,435 940,451 948,435" fill="#2563EB" stroke="none"/>
+    <line x1="1100" y1="540" x2="1175" y2="540"/>
+    <polygon points="1175,532 1191,540 1175,548" fill="#2563EB" stroke="none"/>
+    <line x1="540" y1="360" x2="540" y2="435"/>
+    <polygon points="532,435 540,451 548,435" fill="#2563EB" stroke="none"/>
+  </g>
+
+  <!-- Flow labels -->
+  <g font-family="Inter, system-ui, sans-serif" font-size="15" fill="#2563EB" font-weight="600">
+    <text x="318" y="262">goal</text>
+    <text x="712" y="262">jobs</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="80" y="720" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700" fill="#10141C">Draft-first loop</text>
+  <g font-family="Inter, system-ui, sans-serif" font-size="19" fill="#334155">
+    <rect x="80" y="745" width="270" height="56" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="215" y="780" text-anchor="middle">1 · Define goal</text>
+    <rect x="370" y="745" width="270" height="56" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="505" y="780" text-anchor="middle">2 · Agent drafts</text>
+    <rect x="660" y="745" width="270" height="56" rx="14" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+    <text x="795" y="780" text-anchor="middle" font-weight="700" fill="#1D4ED8">3 · You approve</text>
+    <rect x="950" y="745" width="270" height="56" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="1085" y="780" text-anchor="middle">4 · Track progress</text>
+  </g>
+  <text x="80" y="845" font-family="Inter, system-ui, sans-serif" font-size="17" fill="#64748B">Secrets stay server-side · Supabase RLS · X tokens encrypted · pnpm dev (:3000) + uvicorn agent.main:app (:8000)</text>
+</svg>

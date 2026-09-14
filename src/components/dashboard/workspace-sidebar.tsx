@@ -134,9 +134,6 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         >
           <CreditIcon />
           <span className="flex-1 whitespace-nowrap">Credits</span>
-          <Tooltip label="Usage tracking is coming soon" placement="top">
-            <span className="rounded-full bg-wash px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-muted">Soon</span>
-          </Tooltip>
         </Link>
       </nav>
 
