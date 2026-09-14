@@ -1,11 +1,11 @@
 import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { LoaderCircle } from "lucide-react";
-import { Tooltip } from "../tooltip";
+import { Tooltip, type TooltipPlacement } from "../tooltip";
 import { useToast } from "../toast";
 import { useDashboard } from "../dashboard-layout";
 import { createDeployment } from "./goal-persistence";
-import { BranchIcon, BranchPlusIcon, ClockIcon, MilestoneIcon, PlusIcon, WorkflowIcon } from "./icons";
+import { BranchIcon, BranchPlusIcon, ClockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
 import type { Goal } from "./types";
 
 function pluralize(count: number, singular: string, plural?: string) {
@@ -113,6 +113,14 @@ export function GoalCardMeta({ goal }: { goal: Goal }) {
         </span>
       </Tooltip>
       <MilestoneBreakdown goal={goal} />
+      {goal.parentGoalId ? (
+        <Tooltip label="This goal was branched from another goal">
+          <span className="inline-flex items-center gap-1 rounded-full border border-line bg-wash px-2 py-0.5 text-[0.65rem] font-bold text-muted">
+            <BranchIcon className="size-3" />
+            Branched
+          </span>
+        </Tooltip>
+      ) : null}
       <Tooltip label={`Last updated ${goal.updatedAt}`}>
         <span className="inline-flex items-center gap-1.5 text-muted">
           <ClockIcon />
@@ -161,23 +169,37 @@ export function useCreateWorkflow(goal: Goal) {
   return { createWorkflow, isDeploying };
 }
 
-export function GoalCardActions({ goal }: { goal: Goal }) {
-  const { openCreateGoal } = useDashboard();
+export function GoalCardActions({ goal, onEdit, onDelete, tooltipPlacement = "top" }: { goal: Goal; onEdit?: () => void; onDelete?: () => void; tooltipPlacement?: TooltipPlacement }) {
+  const navigate = useNavigate();
   const { createWorkflow, isDeploying } = useCreateWorkflow(goal);
+  const canBranch = !goal.parentGoalId;
 
   return (
     <span className="flex shrink-0 items-center gap-2">
-      <Tooltip label="Create branch">
+      {onEdit ? (
+        <Tooltip label="Edit goal" placement={tooltipPlacement}>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Edit ${goal.title}`}
+            className="grid size-9 place-items-center rounded-full border border-line bg-white text-ink shadow-sm transition-colors hover:bg-wash focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          >
+            <PencilIcon />
+          </button>
+        </Tooltip>
+      ) : null}
+      <Tooltip label={canBranch ? "Create branch" : "Only top-level goals can branch"} placement={tooltipPlacement}>
         <button
           type="button"
-          onClick={openCreateGoal}
-          aria-label={`Create branch from ${goal.title}`}
-          className="grid size-9 place-items-center rounded-full border border-ink bg-ink text-white shadow-sm transition-colors hover:bg-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          onClick={canBranch ? () => void navigate({ to: "/app/goals/branch/$goalId", params: { goalId: goal.id } }) : undefined}
+          disabled={!canBranch}
+          aria-label={canBranch ? `Create branch from ${goal.title}` : `${goal.title} is a branch and can't branch further`}
+          className={`grid size-9 place-items-center rounded-full border border-ink bg-ink text-white shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40 ${canBranch ? "hover:bg-ink-soft" : ""}`}
         >
           <BranchPlusIcon />
         </button>
       </Tooltip>
-      <Tooltip label="Create workflow">
+      <Tooltip label="Create workflow" placement={tooltipPlacement}>
         <button
           type="button"
           onClick={() => void createWorkflow()}
@@ -193,6 +215,18 @@ export function GoalCardActions({ goal }: { goal: Goal }) {
           )}
         </button>
       </Tooltip>
+      {onDelete ? (
+        <Tooltip label={goal.parentGoalId ? "Delete branch" : "Delete goal"} placement={tooltipPlacement}>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={goal.parentGoalId ? `Delete branch ${goal.title}` : `Delete goal ${goal.title}`}
+            className="grid size-9 place-items-center rounded-full border border-red-200 bg-white text-red-600 shadow-sm transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          >
+            <TrashIcon />
+          </button>
+        </Tooltip>
+      ) : null}
     </span>
   );
 }

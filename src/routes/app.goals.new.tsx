@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { PERMISSION_GROUPS, createDeployment, createGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
-import { ArrowLeftIcon, CheckIcon, ChevronDownIcon, PlusIcon, TrashIcon } from "../components/dashboard/icons";
-import { Tooltip } from "../components/tooltip";
+import { createDeployment, createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
+import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "../components/dashboard/icons";
+import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
 
 export const Route = createFileRoute("/app/goals/new")({
-  validateSearch: (search: Record<string, unknown>): { drawer?: "open" | "closed" } => ({
+  validateSearch: (search: Record<string, unknown>): { drawer?: "open" | "closed"; edit?: string } => ({
     drawer: search.drawer === "closed" || search.drawer === "open" ? search.drawer : undefined,
+    edit: typeof search.edit === "string" && search.edit ? search.edit : undefined,
   }),
   head: () => ({
     meta: [{ title: "xGoal — New goal" }],
@@ -17,12 +18,6 @@ export const Route = createFileRoute("/app/goals/new")({
 });
 
 const STEPS = ["Details", "Milestones", "Permissions"] as const;
-
-const MILESTONE_MIN_LENGTH = 3;
-const MILESTONE_MAX_LENGTH = 120;
-
-const inputClass =
-  "mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-blue focus:ring-2 focus:ring-blue/10";
 
 function StepIndicator({ step }: { step: number }) {
   return (
@@ -47,27 +42,9 @@ function StepIndicator({ step }: { step: number }) {
   );
 }
 
-function PermissionSwitch({ checked, onChange, label }: { checked: boolean; onChange: (next: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-blue" : "bg-line"}`}
-    >
-      <span
-        className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${checked ? "left-[1.375rem]" : "left-0.5"}`}
-        aria-hidden="true"
-      />
-    </button>
-  );
-}
-
 function NewGoalPage() {
-  const { drawer } = Route.useSearch();
-  const { user, refreshGoals } = useDashboard();
+  const { drawer, edit } = Route.useSearch();
+  const { user, goals, isGoalsLoading, refreshGoals } = useDashboard();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -76,8 +53,38 @@ function NewGoalPage() {
   const [milestones, setMilestones] = useState<string[]>([""]);
   const [granted, setGranted] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [prefilledEdit, setPrefilledEdit] = useState(false);
+  const [permissionsFailed, setPermissionsFailed] = useState(false);
   const [deployMenuOpen, setDeployMenuOpen] = useState(false);
   const deployMenuRef = useRef<HTMLDivElement>(null);
+
+  const editGoal = edit ? goals.find((goal) => goal.id === edit) : undefined;
+  const editNotFound = !!edit && !isGoalsLoading && !editGoal;
+
+  useEffect(() => {
+    if (!editGoal || prefilledEdit) return;
+    if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "")) {
+      setPrefilledEdit(true);
+      return;
+    }
+    setTitle(editGoal.title);
+    setDescription(editGoal.description ?? "");
+    setMilestones(editGoal.milestones.length > 0 ? editGoal.milestones.map((milestone) => milestone.title) : [""]);
+    setPrefilledEdit(true);
+    let mounted = true;
+    loadGoalPermissions(user.id, editGoal.id).then(({ permissions: loaded, error: loadError }) => {
+      if (!mounted) return;
+      if (loadError) {
+        toast.error("Permissions couldn't be loaded.", { description: loadError });
+        setPermissionsFailed(true);
+        return;
+      }
+      setGranted(loaded);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [editGoal, prefilledEdit, user.id]);
 
   useEffect(() => {
     if (!deployMenuOpen) return;
@@ -100,15 +107,6 @@ function NewGoalPage() {
   const detailsValid = title.trim().length > 0 && description.trim().length > 0;
   const milestonesValid = milestones.some((milestone) => milestone.trim().length >= MILESTONE_MIN_LENGTH);
   const canProceed = step === 0 ? detailsValid : step === 1 ? milestonesValid : true;
-
-  function updateMilestone(index: number, value: string) {
-    setMilestones(milestones.map((milestone, milestoneIndex) => (milestoneIndex === index ? value : milestone)));
-  }
-
-  function removeMilestone(index: number) {
-    if (milestones.length <= 1) return;
-    setMilestones(milestones.filter((_, milestoneIndex) => milestoneIndex !== index));
-  }
 
   function togglePermission(permission: string, next: boolean) {
     setGranted(next ? [...granted, permission] : granted.filter((item) => item !== permission));
@@ -133,14 +131,41 @@ function NewGoalPage() {
       toast.error("Finish the details and add at least one milestone before creating the goal.");
       return;
     }
+    const cleanTitle = title.trim();
+    const cleanDescription = description.trim();
+    if (editGoal) {
+      setIsSaving(true);
+      try {
+        const { error } = await updateGoal({
+          ownerId: user.id,
+          goalId: editGoal.id,
+          title: cleanTitle,
+          description: cleanDescription,
+          milestones: cleanMilestones,
+          permissions: permissionsFailed ? null : granted,
+        });
+        if (error) {
+          toast.error("The goal could not be updated.", { description: error });
+          return;
+        }
+        await refreshGoals();
+        toast.success("Goal updated");
+        void navigate({ to: "/app/goals/$goalId", params: { goalId: editGoal.id }, search: goalsSearch });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "The goal could not be updated.";
+        toast.error("The goal could not be updated.", { description: message });
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
     setIsSaving(true);
     setDeployMenuOpen(false);
     try {
-      const cleanTitle = title.trim();
       const result = await createGoal({
         ownerId: user.id,
         title: cleanTitle,
-        description: description.trim(),
+        description: cleanDescription,
         milestones: cleanMilestones,
         permissions: granted,
       });
@@ -183,17 +208,45 @@ function NewGoalPage() {
     }
   }
 
+  if (editNotFound) {
+    return (
+      <section className="min-h-screen bg-paper">
+        <section className="mx-auto w-full max-w-2xl p-5 sm:p-8">
+          <section className="rounded-3xl border border-dashed border-line bg-wash px-6 py-16 text-center">
+            <h1 className="text-xl font-semibold tracking-[-0.04em]">Goal not found</h1>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
+              This goal may have been deleted, or you may not have access to it.
+            </p>
+            <Link
+              to="/app/goals"
+              search={goalsSearch}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
+            >
+              Back to goals
+            </Link>
+          </section>
+        </section>
+      </section>
+    );
+  }
+
   return (
     <section className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper px-5 py-3 sm:px-8">
-        <Link to="/app/goals" search={goalsSearch} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink">
-          <ArrowLeftIcon /> Goals
-        </Link>
+        {editGoal ? (
+          <Link to="/app/goals/$goalId" params={{ goalId: editGoal.id }} search={goalsSearch} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink">
+            <ArrowLeftIcon /> Back to goal
+          </Link>
+        ) : (
+          <Link to="/app/goals" search={goalsSearch} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink">
+            <ArrowLeftIcon /> Goals
+          </Link>
+        )}
         <span className="inline-flex rounded-full bg-wash px-2.5 py-1 text-xs font-bold text-muted">Step {step + 1} of 3</span>
       </header>
 
       <section className="mx-auto w-full max-w-2xl p-5 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue">New goal</p>
+        <p className="text-sm font-medium text-blue">{editGoal ? "Edit goal" : "New goal"}</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-[-0.07em] sm:text-5xl">
           {step === 0 ? "What are you working toward?" : step === 1 ? "How will you get there?" : "What can the agent do?"}
         </h1>
@@ -236,61 +289,16 @@ function NewGoalPage() {
           ) : null}
 
           {step === 1 ? (
-            <section>
-              <p className="text-sm font-semibold">Milestones</p>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                A goal needs at least one milestone — a single line of {MILESTONE_MIN_LENGTH}–{MILESTONE_MAX_LENGTH} characters.
-              </p>
-              <ul className="mt-4 space-y-3">
-                {milestones.map((milestone, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <Tooltip label={milestones.length <= 1 ? "A goal needs at least one milestone" : `Remove milestone ${index + 1}`} placement="top">
-                      <button
-                        type="button"
-                        onClick={() => removeMilestone(index)}
-                        disabled={milestones.length <= 1}
-                        aria-label={milestones.length <= 1 ? "Cannot remove the last milestone" : `Remove milestone ${index + 1}`}
-                        className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-white text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted"
-                      >
-                        <TrashIcon />
-                      </button>
-                    </Tooltip>
-                    <section className="min-w-0 flex-1">
-                      <label className="block">
-                        <span className="sr-only">Milestone {index + 1}</span>
-                        <input
-                          type="text"
-                          value={milestone}
-                          onChange={(event) => updateMilestone(index, event.target.value)}
-                          minLength={MILESTONE_MIN_LENGTH}
-                          maxLength={MILESTONE_MAX_LENGTH}
-                          placeholder={`Milestone ${index + 1} — what should be true?`}
-                          className={`${inputClass} mt-0`}
-                        />
-                      </label>
-                    </section>
-                    {index === milestones.length - 1 ? (
-                      <Tooltip label="Add milestone" placement="top">
-                        <button
-                          type="button"
-                          onClick={() => setMilestones([...milestones, ""])}
-                          aria-label="Add milestone"
-                          className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue text-white"
-                        >
-                          <PlusIcon />
-                        </button>
-                      </Tooltip>
-                    ) : (
-                      <span className="size-9 shrink-0" aria-hidden="true" />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <MilestoneEditor milestones={milestones} onChange={setMilestones} />
           ) : null}
 
           {step === 2 ? (
             <section className="space-y-6">
+              {editGoal && permissionsFailed ? (
+                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                  Permissions couldn't be loaded, so saving won't change them. Your existing permissions stay as they are.
+                </p>
+              ) : null}
               <section className="rounded-2xl border border-line bg-white p-4">
                 <p className="truncate text-sm font-bold">{title.trim() || "Untitled goal"}</p>
                 <p className="mt-1 text-xs text-muted">
@@ -300,47 +308,30 @@ function NewGoalPage() {
                 </p>
               </section>
 
-              {PERMISSION_GROUPS.map((group) => (
-                <section key={group.title}>
-                  <p className="text-sm font-semibold">{group.title}</p>
-                  <ul className="mt-3 space-y-2">
-                    {group.entries.map((entry) => {
-                      const checked = granted.includes(entry.permission);
-                      return (
-                        <li
-                          key={entry.permission}
-                          className={`flex items-center gap-4 rounded-2xl border p-4 transition-colors ${checked ? "border-blue/40 bg-blue-pale/40" : "border-line bg-white"}`}
-                        >
-                          <section className="min-w-0 flex-1">
-                            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                              {entry.label}
-                              {entry.sensitive ? (
-                                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-red-700">
-                                  High impact
-                                </span>
-                              ) : null}
-                            </p>
-                            <p className="mt-0.5 text-xs leading-5 text-muted">{entry.description}</p>
-                          </section>
-                          <PermissionSwitch checked={checked} onChange={(next) => togglePermission(entry.permission, next)} label={entry.label} />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))}
+              <PermissionEditor granted={granted} onToggle={togglePermission} />
             </section>
           ) : null}
 
           <section className="mt-6 flex items-center justify-between gap-2 pt-4">
             {step === 0 ? (
-              <Link
-                to="/app/goals"
-                search={goalsSearch}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
-              >
-                Cancel
-              </Link>
+              editGoal ? (
+                <Link
+                  to="/app/goals/$goalId"
+                  params={{ goalId: editGoal.id }}
+                  search={goalsSearch}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
+                >
+                  Cancel
+                </Link>
+              ) : (
+                <Link
+                  to="/app/goals"
+                  search={goalsSearch}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
+                >
+                  Cancel
+                </Link>
+              )
             ) : (
               <button
                 type="button"
@@ -359,6 +350,16 @@ function NewGoalPage() {
               >
                 Next
                 <span aria-hidden="true">→</span>
+              </button>
+            ) : editGoal ? (
+              <button
+                type="button"
+                onClick={() => void handleCreate("goal")}
+                disabled={isSaving}
+                aria-busy={isSaving}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isSaving ? "Saving…" : "Save changes"}
               </button>
             ) : (
               <div ref={deployMenuRef} className="relative">

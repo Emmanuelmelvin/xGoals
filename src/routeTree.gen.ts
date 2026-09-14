@@ -21,6 +21,7 @@ import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
 import { Route as AppGoalsGoalIdRouteImport } from './routes/app.goals.$goalId'
 import { Route as AppGoalsNewRouteImport } from './routes/app.goals.new'
 import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
+import { Route as AppGoalsBranchGoalIdRouteImport } from './routes/app.goals.branch.$goalId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,11 @@ const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
   path: '/workflow/$workflowId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGoalsBranchGoalIdRoute = AppGoalsBranchGoalIdRouteImport.update({
+  id: '/branch/$goalId',
+  path: '/branch/$goalId',
+  getParentRoute: () => AppGoalsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals/': typeof AppGoalsIndexRoute
+  '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals': typeof AppGoalsIndexRoute
+  '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/goals/': typeof AppGoalsIndexRoute
+  '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals/'
+    | '/app/goals/branch/$goalId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals'
+    | '/app/goals/branch/$goalId'
   id:
     | '__root__'
     | '/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
     | '/app/goals/'
+    | '/app/goals/branch/$goalId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkflowWorkflowIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/goals/branch/$goalId': {
+      id: '/app/goals/branch/$goalId'
+      path: '/branch/$goalId'
+      fullPath: '/app/goals/branch/$goalId'
+      preLoaderRoute: typeof AppGoalsBranchGoalIdRouteImport
+      parentRoute: typeof AppGoalsRoute
+    }
   }
 }
 
@@ -266,12 +285,14 @@ interface AppGoalsRouteChildren {
   AppGoalsGoalIdRoute: typeof AppGoalsGoalIdRoute
   AppGoalsNewRoute: typeof AppGoalsNewRoute
   AppGoalsIndexRoute: typeof AppGoalsIndexRoute
+  AppGoalsBranchGoalIdRoute: typeof AppGoalsBranchGoalIdRoute
 }
 
 const AppGoalsRouteChildren: AppGoalsRouteChildren = {
   AppGoalsGoalIdRoute: AppGoalsGoalIdRoute,
   AppGoalsNewRoute: AppGoalsNewRoute,
   AppGoalsIndexRoute: AppGoalsIndexRoute,
+  AppGoalsBranchGoalIdRoute: AppGoalsBranchGoalIdRoute,
 }
 
 const AppGoalsRouteWithChildren = AppGoalsRoute._addFileChildren(

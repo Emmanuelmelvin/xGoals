@@ -15,7 +15,7 @@ function ProfilePage() {
     <section className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 flex min-h-20 items-center justify-between gap-6 border-b border-line bg-paper px-5 sm:px-8">
         <section>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Workspace</p>
+          <p className="text-xs font-semibold text-muted">Workspace</p>
           <h1 className="mt-1 text-xl font-semibold tracking-[-0.04em]">Profile</h1>
         </section>
         <Link to="/app" className="text-sm font-semibold text-muted transition-colors hover:text-ink">Back to overview</Link>

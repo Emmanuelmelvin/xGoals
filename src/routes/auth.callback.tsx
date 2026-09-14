@@ -34,7 +34,7 @@ function AuthCallbackPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-paper px-6 text-center text-ink">
       <section className="max-w-md">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue">
+        <p className="text-sm font-medium text-blue">
           xGoal
         </p>
         <h1 className="mt-5 text-3xl font-semibold tracking-[-0.06em]">

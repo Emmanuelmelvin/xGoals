@@ -13,6 +13,7 @@ import {
   LogOut,
   Milestone,
   PanelLeft,
+  Pencil,
   Plus,
   Settings,
   Trash2,
@@ -37,6 +38,7 @@ export const CheckIcon = withLucideDefaults(Check, "size-4");
 export const ChevronDownIcon = withLucideDefaults(ChevronDown, "size-4");
 export const ChevronRightIcon = withLucideDefaults(ChevronRight, "size-4");
 export const PlusIcon = withLucideDefaults(Plus, "size-4");
+export const PencilIcon = withLucideDefaults(Pencil, "size-4");
 export const TrashIcon = withLucideDefaults(Trash2, "size-4");
 export const CloseIcon = withLucideDefaults(X, "size-4");
 export const GridIcon = withLucideDefaults(LayoutGrid, "size-5");

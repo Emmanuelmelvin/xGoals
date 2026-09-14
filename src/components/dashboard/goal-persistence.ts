@@ -99,6 +99,46 @@ export async function loadDeploymentsForUser(ownerId: string) {
   };
 }
 
+export async function updateGoal({ ownerId, goalId, title, description, milestones, permissions }: { ownerId: string; goalId: string; title: string; description: string; milestones: string[]; permissions: string[] | null }) {
+  const supabase = createClient();
+  const { error: goalError } = await supabase
+    .from("goals")
+    .update({ title, prompt: description, plan: { version: 1, milestones } })
+    .eq("id", goalId)
+    .eq("owner_id", ownerId);
+
+  if (goalError) return { error: goalError.message };
+
+  // null means "unknown" (e.g. the current set failed to load) — leave stored
+  // permissions untouched instead of wiping them.
+  if (permissions === null) return { error: null as string | null };
+
+  const { error: deleteError } = await supabase
+    .from("goal_permissions")
+    .delete()
+    .eq("goal_id", goalId)
+    .eq("owner_id", ownerId);
+
+  if (deleteError) return { error: deleteError.message };
+
+  if (permissions.length > 0) {
+    const { error: permissionsError } = await supabase.from("goal_permissions").insert(
+      permissions.map((permission) => ({ goal_id: goalId, owner_id: ownerId, permission, decision: "allow", source: "user", reason: "" })),
+    );
+    if (permissionsError) return { error: permissionsError.message };
+  }
+
+  return { error: null as string | null };
+}
+
+export async function deleteGoal({ ownerId, goalId }: { ownerId: string; goalId: string }) {
+  const supabase = createClient();
+  const { error } = await supabase.from("goals").delete().eq("id", goalId).eq("owner_id", ownerId);
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
 export async function loadGoalPermissions(ownerId: string, goalId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -184,11 +224,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 
 export type GoalCreationMode = "goal" | "deploy";
 
-export async function createGoal({ ownerId, title, description, milestones, permissions }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[] }) {
+export async function createGoal({ ownerId, title, description, milestones, permissions, parentGoalId }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; parentGoalId?: string | null }) {
   const supabase = createClient();
   const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones } })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, parent_goal_id: parentGoalId ?? null })
     .select("id")
     .single();
 
