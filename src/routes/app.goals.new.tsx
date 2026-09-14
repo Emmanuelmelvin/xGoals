@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { PERMISSION_GROUPS, createGoal } from "../components/dashboard/goal-persistence";
-import { PlusIcon, TrashIcon } from "../components/dashboard/icons";
+import { PERMISSION_GROUPS, createGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
+import { ChevronDownIcon, PlusIcon, TrashIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
 
@@ -76,6 +76,24 @@ function NewGoalPage() {
   const [milestones, setMilestones] = useState<string[]>([""]);
   const [granted, setGranted] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [deployMenuOpen, setDeployMenuOpen] = useState(false);
+  const deployMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!deployMenuOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (deployMenuRef.current && !deployMenuRef.current.contains(event.target as Node)) setDeployMenuOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setDeployMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [deployMenuOpen]);
 
   const goalsSearch = drawer ? { drawer } : {};
 
@@ -108,7 +126,7 @@ function NewGoalPage() {
     setStep(step + 1);
   }
 
-  async function handleCreate() {
+  async function handleCreate(mode: GoalCreationMode) {
     if (isSaving) return;
     const cleanMilestones = milestones.map((milestone) => milestone.trim()).filter((milestone) => milestone.length >= MILESTONE_MIN_LENGTH);
     if (!title.trim() || !description.trim() || cleanMilestones.length === 0) {
@@ -116,6 +134,7 @@ function NewGoalPage() {
       return;
     }
     setIsSaving(true);
+    setDeployMenuOpen(false);
     try {
       const result = await createGoal({
         ownerId: user.id,
@@ -123,6 +142,7 @@ function NewGoalPage() {
         description: description.trim(),
         milestones: cleanMilestones,
         permissions: granted,
+        mode,
       });
       if (!result.id) {
         const message = result.error ?? "The goal could not be created.";
@@ -131,7 +151,11 @@ function NewGoalPage() {
       }
       await refreshGoals();
       toast.success("Goal created", {
-        description: result.error ? `Saved, but ${result.error}` : "Your milestones and permissions are saved as a draft.",
+        description: result.error
+          ? `Saved, but ${result.error}`
+          : mode === "active"
+            ? "Your goal is active and ready for deployment."
+            : "Your milestones and permissions are saved as a draft.",
       });
       void navigate({ to: "/app/goals", search: goalsSearch });
     } catch (err) {
@@ -320,15 +344,52 @@ function NewGoalPage() {
                 <span aria-hidden="true">→</span>
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => void handleCreate()}
-                disabled={isSaving}
-                aria-busy={isSaving}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {isSaving ? "Creating…" : "Create goal"}
-              </button>
+              <div ref={deployMenuRef} className="relative">
+                <div className="flex">
+                  <button
+                    type="button"
+                    onClick={() => void handleCreate("draft")}
+                    disabled={isSaving}
+                    aria-busy={isSaving}
+                    className="inline-flex items-center gap-2 rounded-l-xl rounded-r-none bg-blue px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {isSaving ? "Creating…" : "Create goal"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeployMenuOpen(!deployMenuOpen)}
+                    disabled={isSaving}
+                    aria-expanded={deployMenuOpen}
+                    aria-haspopup="menu"
+                    aria-label="More creation options"
+                    className="grid place-items-center rounded-l-none rounded-r-xl border-l border-white/30 bg-blue px-2.5 text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronDownIcon />
+                  </button>
+                </div>
+                {deployMenuOpen ? (
+                  <div role="menu" aria-label="Creation options" className="absolute bottom-full right-0 z-20 mb-2 w-72 rounded-2xl border border-line bg-white p-1.5 shadow-lg">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleCreate("draft")}
+                      className="block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
+                    >
+                      <span className="block text-sm font-bold">Create goal</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-muted">Save milestones and permissions as a draft.</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleCreate("active")}
+                      className="mt-1 block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
+                    >
+                      <span className="block text-sm font-bold">Create goal and run deployment</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-muted">Activate the goal so deployment can run from it.</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             )}
           </section>
         </section>

@@ -97,11 +97,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
-export async function createGoal({ ownerId, title, description, milestones, permissions }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[] }) {
+export type GoalCreationMode = "draft" | "active";
+
+export async function createGoal({ ownerId, title, description, milestones, permissions, mode = "draft" }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; mode?: GoalCreationMode }) {
   const supabase = createClient();
   const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, status: "draft" })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, status: mode })
     .select("id")
     .single();
 
