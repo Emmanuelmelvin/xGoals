@@ -142,47 +142,8 @@ export function GoalCardMeta({ goal }: { goal: Goal }) {
   );
 }
 
-export function useCreateWorkflow(goal: Goal) {
-  const { user, refreshGoals } = useDashboard();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [isDeploying, setIsDeploying] = useState(false);
-
-  async function createWorkflow() {
-    if (isDeploying) return false;
-    setIsDeploying(true);
-    try {
-      const { error } = await createDeployment({
-        ownerId: user.id,
-        goalId: goal.id,
-        name: goal.title,
-        milestones: goal.milestones.map((milestone) => milestone.title),
-        permissions: [],
-      });
-      if (error) {
-        toast.error("The workflow could not be created.", { description: error });
-        return false;
-      }
-      await refreshGoals();
-      toast.success("Workflow running", { description: `A running workflow was created from “${goal.title}”.` });
-      void navigate({ to: "/app/workflows" });
-      return true;
-    } catch (err) {
-      toast.error("The workflow could not be created.", {
-        description: err instanceof Error ? err.message : undefined,
-      });
-      return false;
-    } finally {
-      setIsDeploying(false);
-    }
-  }
-
-  return { createWorkflow, isDeploying };
-}
-
 export function GoalCardActions({ goal, onEdit, onDelete, tooltipPlacement = "top" }: { goal: Goal; onEdit?: () => void; onDelete?: () => void; tooltipPlacement?: TooltipPlacement }) {
   const navigate = useNavigate();
-  const { createWorkflow, isDeploying } = useCreateWorkflow(goal);
   const canBranch = !goal.parentGoalId;
 
   return (
@@ -213,17 +174,11 @@ export function GoalCardActions({ goal, onEdit, onDelete, tooltipPlacement = "to
       <Tooltip label="Create workflow" placement={tooltipPlacement}>
         <button
           type="button"
-          onClick={() => void createWorkflow()}
-          disabled={isDeploying}
-          aria-busy={isDeploying}
-          aria-label={isDeploying ? `Creating workflow from ${goal.title}…` : `Create workflow from ${goal.title}`}
-          className="grid size-9 place-items-center rounded-full border border-blue-dark bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={() => void navigate({ to: "/app/workflows/new", search: { goal: goal.id } })}
+          aria-label={`Create workflow from ${goal.title}`}
+          className="grid size-9 place-items-center rounded-full border border-blue-dark bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
         >
-          {isDeploying ? (
-            <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <PlusIcon />
-          )}
+          <PlusIcon />
         </button>
       </Tooltip>
       {onDelete ? (
