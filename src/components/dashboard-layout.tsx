@@ -100,14 +100,20 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   const contextValue: DashboardContextValue = { user, goals, visibleGoals, isGoalsLoading, goalError, filter, setFilter, refreshGoals, openCreateGoal: openGoalCreation };
   return <DashboardContext.Provider
     value={contextValue}><main className="relative flex min-h-screen overflow-x-hidden bg-wash text-ink">
-      {drawerOpen ?
-        <button type="button" onClick={toggleDrawer} className="fixed inset-0 z-20 bg-ink/20 lg:hidden" aria-label="Close navigation" /> : null}
+      <button
+        type="button"
+        onClick={toggleDrawer}
+        aria-hidden={!drawerOpen}
+        tabIndex={drawerOpen ? 0 : -1}
+        aria-label="Close navigation"
+        className={`fixed inset-0 z-20 bg-ink/20 transition-opacity duration-300 ease-out lg:hidden ${drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      />
       <WorkspaceSidebar
         user={user} drawer={drawer} drawerOpen={drawerOpen} onCreateGoal={openGoalCreation} onToggleDrawer={toggleDrawer} onSignOut={signOut} />
       <Tooltip label={drawerOpen ? "Close navigation" : "Open navigation"} placement="left">
         <button type="button" onClick={toggleDrawer} aria-expanded={drawerOpen} aria-label={drawerOpen ? "Close navigation" : "Open navigation"} className="fixed right-4 top-4 z-40 rounded-xl border border-line bg-paper p-2.5 text-muted shadow-sm transition-colors hover:bg-wash hover:text-ink lg:hidden"><PanelLeftIcon /></button>
       </Tooltip>
-      <section className={`min-w-0 flex-1 ${drawerOpen ? "lg:ml-72" : "lg:ml-20"}`}>{children}</section>
+      <section className={`min-w-0 flex-1 transition-[margin] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${drawerOpen ? "lg:ml-72" : "lg:ml-20"}`}>{children}</section>
     </main>
   </DashboardContext.Provider>;
 }

@@ -17,16 +17,24 @@ type WorkspaceSidebarProps = {
   onSignOut: () => void;
 };
 
-function navLinkClass(drawerOpen: boolean) {
-  return drawerOpen ? "gap-3" : "mx-auto w-fit justify-center";
-}
-
 export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onToggleDrawer, onSignOut }: WorkspaceSidebarProps) {
   const search = { drawer };
 
-  if (!drawerOpen) {
-    return (
-      <aside className="fixed inset-y-0 left-0 z-30 flex h-screen w-20 shrink-0 -translate-x-full flex-col items-center border-r border-line bg-paper p-3 transition-transform duration-200 lg:translate-x-0" aria-label="Workspace navigation">
+  return (
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 flex h-screen shrink-0 flex-col border-r border-line bg-paper transition-[width,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform] ${
+        drawerOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full lg:translate-x-0"
+      }`}
+      aria-label="Workspace navigation"
+    >
+      {/* Collapsed rail — intentionally overflow-visible so right-placed tooltips can extend over the main content. */}
+      <div
+        className={`flex h-full w-20 shrink-0 flex-col items-center overflow-visible p-3 transition-opacity ease-out ${
+          drawerOpen ? "invisible absolute inset-y-0 left-0 opacity-0 duration-150" : "visible relative opacity-100 delay-150 duration-200"
+        }`}
+        aria-hidden={drawerOpen}
+        inert={drawerOpen}
+      >
         <Link to="/" className="flex items-center" aria-label="xGoal home">
           <XGoalMark className="size-9 shrink-0" />
         </Link>
@@ -51,7 +59,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
               <WorkflowIcon />
             </Link>
           </Tooltip>
-          <Tooltip label="Credits — usage tracking coming soon" placement="right">
+          <Tooltip label="Credits" placement="right">
             <Link to="/app/credits" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <CreditIcon />
             </Link>
@@ -64,12 +72,16 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
             </Link>
           </Tooltip>
         </footer>
-      </aside>
-    );
-  }
+      </div>
 
-  return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex h-screen w-72 shrink-0 translate-x-0 flex-col border-r border-line bg-paper p-5 transition-transform duration-200" aria-label="Workspace navigation">
+      {/* Expanded drawer — clips its own labels during the width animation without clipping the collapsed rail's tooltips. */}
+      <div
+        className={`flex h-full w-72 max-w-full shrink-0 flex-col overflow-hidden p-5 transition-opacity ease-out ${
+          drawerOpen ? "visible relative opacity-100 delay-150 duration-200" : "invisible absolute inset-y-0 left-0 opacity-0 duration-150"
+        }`}
+        aria-hidden={!drawerOpen}
+        inert={!drawerOpen}
+      >
       <header className="flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3" aria-label="xGoal home">
           <XGoalMark className="size-9 shrink-0" />
@@ -87,52 +99,52 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           to="/app"
           search={search}
           activeOptions={{ exact: true }}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
-          inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: "flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white" }}
+          inactiveProps={{ className: "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink" }}
         >
           <GridIcon />
-          <span>Overview</span>
+          <span className="whitespace-nowrap">Overview</span>
         </Link>
 
         <Link
           to="/app/goals"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
-          inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: "flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white" }}
+          inactiveProps={{ className: "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink" }}
         >
           <GoalIcon />
-          <span>Goals</span>
+          <span className="whitespace-nowrap">Goals</span>
         </Link>
 
         <Link
           to="/app/workflows"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
-          inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: "flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white" }}
+          inactiveProps={{ className: "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink" }}
         >
           <WorkflowIcon />
-          <span>Workflows</span>
+          <span className="whitespace-nowrap">Workflows</span>
         </Link>
 
         <Link
           to="/app/credits"
           search={search}
-          activeProps={{ className: `flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white ${navLinkClass(drawerOpen)}` }}
-          inactiveProps={{ className: `flex items-center rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink ${navLinkClass(drawerOpen)}` }}
+          activeProps={{ className: "flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white" }}
+          inactiveProps={{ className: "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink" }}
         >
           <CreditIcon />
-          <span className="flex-1">Credits</span>
+          <span className="flex-1 whitespace-nowrap">Credits</span>
           <Tooltip label="Usage tracking is coming soon" placement="top">
             <span className="rounded-full bg-wash px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-muted">Soon</span>
           </Tooltip>
         </Link>
       </nav>
 
-      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
+      <button type="button" onClick={onCreateGoal} className="mt-4 inline-flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
         <PlusIcon />New goal
       </button>
 
-      <footer className="mt-auto border-t border-line pt-4">
+      <footer className="mt-auto shrink-0 border-t border-line pt-4">
         <Link to="/app/profile" search={search} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-wash">
           <UserAvatar user={user} />
           <span className="min-w-0 flex-1">
@@ -141,11 +153,12 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           </span>
           <ChevronRightIcon />
         </Link>
-        <button type="button" onClick={onSignOut} className="mt-2 flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-xs font-semibold text-muted transition-colors hover:bg-wash hover:text-ink">
+        <button type="button" onClick={onSignOut} className="mt-2 flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-2 py-2 text-left text-xs font-semibold text-muted transition-colors hover:bg-wash hover:text-ink">
           <SettingsIcon />
           Sign out
         </button>
       </footer>
+      </div>
     </aside>
   );
 }
