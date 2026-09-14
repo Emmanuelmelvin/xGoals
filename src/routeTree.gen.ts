@@ -21,6 +21,8 @@ import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
 import { Route as AppGoalsGoalIdRouteImport } from './routes/app.goals.$goalId'
 import { Route as AppGoalsNewRouteImport } from './routes/app.goals.new'
 import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
+import { Route as AppWorkflowsIndexRouteImport } from './routes/app.workflows.index'
+import { Route as AppWorkflowsNewRouteImport } from './routes/app.workflows.new'
 import { Route as AppGoalsBranchGoalIdRouteImport } from './routes/app.goals.branch.$goalId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -83,6 +85,16 @@ const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
   path: '/workflow/$workflowId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkflowsIndexRoute = AppWorkflowsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppWorkflowsRoute,
+} as any)
+const AppWorkflowsNewRoute = AppWorkflowsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppWorkflowsRoute,
+} as any)
 const AppGoalsBranchGoalIdRoute = AppGoalsBranchGoalIdRouteImport.update({
   id: '/branch/$goalId',
   path: '/branch/$goalId',
@@ -95,26 +107,29 @@ export interface FileRoutesByFullPath {
   '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
-  '/app/workflows': typeof AppWorkflowsRoute
+  '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals/': typeof AppGoalsIndexRoute
+  '/app/workflows/': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/credits': typeof AppCreditsRoute
   '/app/profile': typeof AppProfileRoute
-  '/app/workflows': typeof AppWorkflowsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals': typeof AppGoalsIndexRoute
+  '/app/workflows': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRoutesById {
@@ -124,13 +139,15 @@ export interface FileRoutesById {
   '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
-  '/app/workflows': typeof AppWorkflowsRoute
+  '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
   '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
+  '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals/': typeof AppGoalsIndexRoute
+  '/app/workflows/': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
 }
 export interface FileRouteTypes {
@@ -147,20 +164,23 @@ export interface FileRouteTypes {
     | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/workflows/new'
     | '/app/goals/'
+    | '/app/workflows/'
     | '/app/goals/branch/$goalId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app/credits'
     | '/app/profile'
-    | '/app/workflows'
     | '/auth/callback'
     | '/app'
     | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/workflows/new'
     | '/app/goals'
+    | '/app/workflows'
     | '/app/goals/branch/$goalId'
   id:
     | '__root__'
@@ -175,7 +195,9 @@ export interface FileRouteTypes {
     | '/app/goals/$goalId'
     | '/app/goals/new'
     | '/app/workflow/$workflowId'
+    | '/app/workflows/new'
     | '/app/goals/'
+    | '/app/workflows/'
     | '/app/goals/branch/$goalId'
   fileRoutesById: FileRoutesById
 }
@@ -271,6 +293,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkflowWorkflowIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workflows/': {
+      id: '/app/workflows/'
+      path: '/'
+      fullPath: '/app/workflows/'
+      preLoaderRoute: typeof AppWorkflowsIndexRouteImport
+      parentRoute: typeof AppWorkflowsRoute
+    }
+    '/app/workflows/new': {
+      id: '/app/workflows/new'
+      path: '/new'
+      fullPath: '/app/workflows/new'
+      preLoaderRoute: typeof AppWorkflowsNewRouteImport
+      parentRoute: typeof AppWorkflowsRoute
+    }
     '/app/goals/branch/$goalId': {
       id: '/app/goals/branch/$goalId'
       path: '/branch/$goalId'
@@ -299,11 +335,25 @@ const AppGoalsRouteWithChildren = AppGoalsRoute._addFileChildren(
   AppGoalsRouteChildren,
 )
 
+interface AppWorkflowsRouteChildren {
+  AppWorkflowsNewRoute: typeof AppWorkflowsNewRoute
+  AppWorkflowsIndexRoute: typeof AppWorkflowsIndexRoute
+}
+
+const AppWorkflowsRouteChildren: AppWorkflowsRouteChildren = {
+  AppWorkflowsNewRoute: AppWorkflowsNewRoute,
+  AppWorkflowsIndexRoute: AppWorkflowsIndexRoute,
+}
+
+const AppWorkflowsRouteWithChildren = AppWorkflowsRoute._addFileChildren(
+  AppWorkflowsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppCreditsRoute: typeof AppCreditsRoute
   AppGoalsRoute: typeof AppGoalsRouteWithChildren
   AppProfileRoute: typeof AppProfileRoute
-  AppWorkflowsRoute: typeof AppWorkflowsRoute
+  AppWorkflowsRoute: typeof AppWorkflowsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppWorkflowWorkflowIdRoute: typeof AppWorkflowWorkflowIdRoute
 }
@@ -312,7 +362,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCreditsRoute: AppCreditsRoute,
   AppGoalsRoute: AppGoalsRouteWithChildren,
   AppProfileRoute: AppProfileRoute,
-  AppWorkflowsRoute: AppWorkflowsRoute,
+  AppWorkflowsRoute: AppWorkflowsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppWorkflowWorkflowIdRoute: AppWorkflowWorkflowIdRoute,
 }

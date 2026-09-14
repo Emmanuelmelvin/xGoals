@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
-import { GoalCardActions, GoalCardMeta, WorkflowStatusSummary, useCreateWorkflow } from "../components/dashboard/goal-card";
+import { GoalCardActions, GoalCardMeta, MilestoneStatusIcon, StatusPill, WorkflowStatusSummary } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
 import { fieldInputClass } from "../components/dashboard/goal-form";
@@ -18,21 +18,6 @@ export const Route = createFileRoute("/app/goals/$goalId")({
 const permissionLabels = new Map(
   PERMISSION_GROUPS.flatMap((group) => group.entries.map((entry) => [entry.permission, entry.label] as const)),
 );
-
-function StatusPill({ status }: { status: Deployment["status"] }) {
-  const styles =
-    status === "running"
-      ? "bg-emerald-100 text-emerald-800"
-      : status === "paused"
-        ? "bg-amber-100 text-amber-800"
-        : "bg-wash text-muted";
-  const label = status === "running" ? "Running" : status === "paused" ? "Paused" : "Stopped";
-  return (
-    <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold ${styles}`}>
-      {label}
-    </span>
-  );
-}
 
 type BranchDeleteDecision = { scope: "all" | "keep-one"; keepGoalId: string | null };
 
@@ -285,7 +270,6 @@ function GoalDetailPage() {
 function GoalDetailContent({ goal }: { goal: Goal }) {
   const { user, goals } = useDashboard();
   const navigate = useNavigate();
-  const { createWorkflow, isDeploying } = useCreateWorkflow(goal);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
@@ -343,15 +327,24 @@ function GoalDetailContent({ goal }: { goal: Goal }) {
             {totalMilestones === 0 ? (
               <p className="mt-2 text-sm leading-6 text-muted">No milestones yet. Add checkpoints to track progress here.</p>
             ) : (
-              <ol className="mt-5 space-y-2.5 pl-6 marker:text-muted list-[lower-roman]">
-                {goal.milestones.map((milestone, index) => (
-                  <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6">
-                    <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                      {milestone.title}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              <>
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  {goal.milestones.filter((milestone) => milestone.completed).length} of {totalMilestones} done
+                </p>
+                <ol className="mt-5 space-y-2.5 pl-6 marker:text-muted list-[lower-roman]">
+                  {goal.milestones.map((milestone, index) => (
+                    <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6">
+                      <span className="inline-flex items-center gap-2.5">
+                        <MilestoneStatusIcon completed={milestone.completed} />
+                        <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
+                          {milestone.title}
+                        </span>
+                        <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </>
             )}
           </article>
 
@@ -363,10 +356,8 @@ function GoalDetailContent({ goal }: { goal: Goal }) {
               </div>
               <button
                 type="button"
-                onClick={() => void createWorkflow()}
-                disabled={isDeploying}
-                aria-busy={isDeploying}
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => void navigate({ to: "/app/workflows/new", search: { goal: goal.id } })}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-dark"
               >
                 <PlusIcon /> Deploy
               </button>

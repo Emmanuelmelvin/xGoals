@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Tooltip, type TooltipPlacement } from "../tooltip";
-import { BranchIcon, BranchPlusIcon, ClockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
+import { BranchIcon, BranchPlusIcon, CheckIcon, ClockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
 import type { DeploymentStatus, Goal } from "./types";
 
 function pluralize(count: number, singular: string, plural?: string) {
@@ -12,6 +12,17 @@ function StatusDot({ tone }: { tone: "running" | "paused" | "stopped" }) {
   const toneClass =
     tone === "running" ? "bg-emerald-500" : tone === "paused" ? "bg-amber-500" : "bg-slate-400";
   return <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${toneClass}`} />;
+}
+
+export function MilestoneStatusIcon({ completed }: { completed: boolean }) {
+  if (completed) {
+    return (
+      <span aria-hidden="true" className="grid size-5 shrink-0 place-items-center rounded-full bg-blue text-white">
+        <CheckIcon className="size-3" />
+      </span>
+    );
+  }
+  return <span aria-hidden="true" className="size-5 shrink-0 rounded-full border border-line bg-white" />;
 }
 
 export function StatusPill({ status }: { status: DeploymentStatus }) {
@@ -245,8 +256,12 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
             <ol className="mt-3 space-y-2 pl-6 marker:text-muted list-[lower-roman]">
               {visibleMilestones.map((milestone, index) => (
                 <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-5">
-                  <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                    {milestone.title}
+                  <span className="inline-flex items-center gap-2">
+                    <MilestoneStatusIcon completed={milestone.completed} />
+                    <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
+                      {milestone.title}
+                    </span>
+                    <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
                   </span>
                 </li>
               ))}

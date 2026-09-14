@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { createDeployment, createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
+import { createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "../components/dashboard/icons";
 import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
@@ -174,26 +174,13 @@ function NewGoalPage() {
         toast.error("The goal could not be created.", { description: message });
         return;
       }
-      if (mode === "deploy") {
-        const deployment = await createDeployment({
-          ownerId: user.id,
-          goalId: result.id,
-          name: cleanTitle,
-          milestones: cleanMilestones,
-          permissions: granted,
-        });
-        if (deployment.error) {
-          toast.warning("Goal created, but the deployment failed.", { description: deployment.error });
-          void navigate({ to: "/app/goals", search: goalsSearch });
-          return;
-        }
-      }
       await refreshGoals();
       if (mode === "deploy") {
-        toast.success("Deployment running", {
-          description: result.error ? `Saved, but ${result.error}` : "Your goal is live and its deployment is running.",
+        toast.success("Goal created", {
+          description:
+            result.error ?? "Now configure your workflow — review the scope, run window, and permissions.",
         });
-        void navigate({ to: "/app/workflows", search: goalsSearch });
+        void navigate({ to: "/app/workflows/new", search: { ...goalsSearch, goal: result.id } });
         return;
       }
       toast.success("Goal created", {

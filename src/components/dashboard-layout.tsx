@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/client";
@@ -88,6 +88,21 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
     nextSearch.set("drawer", drawerOpen ? "closed" : "open");
     void navigate({ href: `${location.pathname}?${nextSearch.toString()}${location.hash ? `#${location.hash}` : ""}` });
   }
+
+  // On mobile the drawer is an overlay — close it whenever the route changes
+  // so tapping a tab reveals the new page instead of staying covered.
+  const initialPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (location.pathname === initialPathRef.current) return;
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 1023.5px)").matches) return;
+    if (!drawerOpen) return;
+    const nextSearch = new URLSearchParams(location.searchStr);
+    nextSearch.set("drawer", "closed");
+    void navigate({ href: `${location.pathname}?${nextSearch.toString()}${location.hash ? `#${location.hash}` : ""}` });
+    // Run only on pathname changes; other values are read fresh from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   function openGoalCreation() {
     void navigate({ to: "/app/goals/new", search: drawer ? { drawer } : {} });

@@ -43,7 +43,7 @@ function parseStringList(raw: unknown): string[] {
 
 export function parseWorkflowDefinition(value: unknown): WorkflowDefinition {
   if (typeof value !== "object" || value === null) {
-    return { milestones: [], permissions: [], runLengthDays: null, endsAt: null };
+    return { milestones: [], permissions: [], runLengthDays: null, endsAt: null, startsAt: null };
   }
   const record = value as Record<string, unknown>;
   const runLengthDays = typeof record.run_length_days === "number" && record.run_length_days > 0 ? Math.floor(record.run_length_days) : null;
@@ -52,6 +52,7 @@ export function parseWorkflowDefinition(value: unknown): WorkflowDefinition {
     permissions: parseStringList(record.permissions),
     runLengthDays,
     endsAt: typeof record.ends_at === "string" && record.ends_at ? record.ends_at : null,
+    startsAt: typeof record.starts_at === "string" && record.starts_at ? record.starts_at : null,
   };
 }
 
@@ -351,14 +352,14 @@ export async function createGoal({ ownerId, title, description, milestones, perm
   return { id: goal.id as string, error: null as string | null };
 }
 
-export async function createDeployment({ ownerId, goalId, name, milestones, permissions, runLengthDays, endsAt }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[]; runLengthDays?: number | null; endsAt?: string | null }) {
+export async function createDeployment({ ownerId, goalId, name, milestones, permissions, runLengthDays, endsAt, startsAt }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[]; runLengthDays?: number | null; endsAt?: string | null; startsAt?: string | null }) {
   const supabase = createClient();
   const { data, error } = await supabase.from("workflows").insert({
     goal_id: goalId,
     owner_id: ownerId,
     name,
     status: "running",
-    definition: { version: 1, milestones, permissions, approval_required: true, run_length_days: runLengthDays ?? null, ends_at: endsAt ?? null },
+    definition: { version: 1, milestones, permissions, approval_required: true, run_length_days: runLengthDays ?? null, ends_at: endsAt ?? null, starts_at: startsAt ?? null },
   }).select("id").single();
 
   if (error || !data) return { id: null as string | null, error: error?.message ?? "The workflow could not be created." };

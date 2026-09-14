@@ -13,9 +13,12 @@ import {
   LogOut,
   Milestone,
   PanelLeft,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Settings,
+  Square,
   Trash2,
   Workflow,
   X,
@@ -48,6 +51,9 @@ export const BranchIcon = withLucideDefaults(GitBranch, "size-4");
 export const BranchPlusIcon = withLucideDefaults(GitBranchPlus, "size-4");
 export const MilestoneIcon = withLucideDefaults(Milestone, "size-4");
 export const ClockIcon = withLucideDefaults(Clock, "size-4");
+export const PauseIcon = withLucideDefaults(Pause, "size-4");
+export const PlayIcon = withLucideDefaults(Play, "size-4");
+export const StopIcon = withLucideDefaults(Square, "size-4");
 export const SettingsIcon = withLucideDefaults(Settings, "size-4");
 export const SignOutIcon = withLucideDefaults(LogOut, "size-4");
 export const PanelLeftIcon = withLucideDefaults(PanelLeft, "size-5");

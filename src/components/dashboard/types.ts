@@ -14,6 +14,7 @@ export type WorkflowDefinition = {
   permissions: string[];
   runLengthDays: number | null;
   endsAt: string | null;
+  startsAt: string | null;
 };
 
 export type RunStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
