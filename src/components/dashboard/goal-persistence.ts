@@ -1,5 +1,5 @@
 import { createClient } from "../../lib/supabase/client";
-import type { Deployment, DeploymentStatus, Goal } from "./types";
+import type { Deployment, DeploymentStatus, Goal, Milestone } from "./types";
 
 export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
   return value === "running" || value === "paused" || value === "stopped";
@@ -8,16 +8,58 @@ export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
 export async function loadGoalsForUser(ownerId: string) {
   const supabase = createClient();
   const [{ data: goalRows, error: goalsError }, { data: workflowRows, error: workflowsError }] = await Promise.all([
-    supabase.from("goals").select("id,title,updated_at").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
-    supabase.from("workflows").select("goal_id").eq("owner_id", ownerId),
+    supabase.from("goals").select("id,title,updated_at,plan,parent_goal_id").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
+    supabase.from("workflows").select("goal_id,status").eq("owner_id", ownerId),
   ]);
 
   if (goalsError) return { goals: [] as Goal[], error: goalsError.message };
   if (workflowsError) return { goals: [] as Goal[], error: workflowsError.message };
 
   const workflowCounts = new Map<string, number>();
+  const workflowBreakdowns = new Map<string, { running: number; paused: number; stopped: number }>();
   for (const workflow of workflowRows ?? []) {
-    if (typeof workflow.goal_id === "string") workflowCounts.set(workflow.goal_id, (workflowCounts.get(workflow.goal_id) ?? 0) + 1);
+    if (typeof workflow.goal_id !== "string") continue;
+    workflowCounts.set(workflow.goal_id, (workflowCounts.get(workflow.goal_id) ?? 0) + 1);
+    const breakdown = workflowBreakdowns.get(workflow.goal_id) ?? { running: 0, paused: 0, stopped: 0 };
+    if (isDeploymentStatus(workflow.status)) breakdown[workflow.status] += 1;
+    else breakdown.stopped += 1;
+    workflowBreakdowns.set(workflow.goal_id, breakdown);
+  }
+
+  const branchCounts = new Map<string, number>();
+  for (const goal of goalRows ?? []) {
+    if (typeof goal.parent_goal_id === "string" && goal.parent_goal_id) {
+      branchCounts.set(goal.parent_goal_id, (branchCounts.get(goal.parent_goal_id) ?? 0) + 1);
+    }
+  }
+
+  function getMilestones(plan: unknown): Milestone[] {
+    if (typeof plan !== "object" || plan === null) return [];
+    const raw = (plan as { milestones?: unknown }).milestones;
+    if (!Array.isArray(raw)) return [];
+    const milestones: Milestone[] = [];
+    for (const entry of raw) {
+      if (typeof entry === "string") {
+        const title = entry.trim();
+        if (title) milestones.push({ title, completed: false });
+      } else if (typeof entry === "object" && entry !== null) {
+        const record = entry as Record<string, unknown>;
+        const titleSource = record.title ?? record.text ?? record.label ?? record.name;
+        const title = typeof titleSource === "string" ? titleSource.trim() : "";
+        if (!title) continue;
+        const status = record.status ?? record.state;
+        const completed =
+          record.completed === true ||
+          record.done === true ||
+          record.is_complete === true ||
+          record.isComplete === true ||
+          status === "completed" ||
+          status === "complete" ||
+          status === "done";
+        milestones.push({ title, completed });
+      }
+    }
+    return milestones;
   }
 
   return {
@@ -25,6 +67,9 @@ export async function loadGoalsForUser(ownerId: string) {
       id: goal.id,
       title: goal.title,
       workflowCount: workflowCounts.get(goal.id) ?? 0,
+      workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, stopped: 0 },
+      branchCount: branchCounts.get(goal.id) ?? 0,
+      milestones: getMilestones(goal.plan),
       updatedAt: new Date(goal.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
     })),
     error: null,

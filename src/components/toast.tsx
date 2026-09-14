@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { CircleCheck, CircleX, Info, TriangleAlert, X } from "lucide-react";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -29,20 +30,28 @@ type ToastContextValue = { toast: ToastApi };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const toastStyles: Record<ToastType, { icon: string; container: string; iconContainer: string }> = {
-  success: { icon: "✓", container: "border-emerald-200 bg-emerald-50 text-emerald-950", iconContainer: "bg-emerald-100 text-emerald-700" },
-  error: { icon: "!", container: "border-red-200 bg-red-50 text-red-950", iconContainer: "bg-red-100 text-red-700" },
-  info: { icon: "i", container: "border-blue-200 bg-blue-pale text-blue-dark", iconContainer: "bg-blue-soft text-blue-dark" },
-  warning: { icon: "!", container: "border-amber-200 bg-amber-50 text-amber-950", iconContainer: "bg-amber-100 text-amber-700" },
+const toastStyles: Record<ToastType, { container: string; iconContainer: string }> = {
+  success: { container: "border-emerald-200 bg-emerald-50 text-emerald-950", iconContainer: "bg-emerald-100 text-emerald-700" },
+  error: { container: "border-red-200 bg-red-50 text-red-950", iconContainer: "bg-red-100 text-red-700" },
+  info: { container: "border-blue-200 bg-blue-pale text-blue-dark", iconContainer: "bg-blue-soft text-blue-dark" },
+  warning: { container: "border-amber-200 bg-amber-50 text-amber-950", iconContainer: "bg-amber-100 text-amber-700" },
 };
 
+const toastIcons = {
+  success: CircleCheck,
+  error: CircleX,
+  info: Info,
+  warning: TriangleAlert,
+} as const;
+
 function CloseIcon() {
-  return <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>;
+  return <X className="size-4" aria-hidden="true" strokeWidth={2} />;
 }
 
 function ToastIcon({ type }: { type: ToastType }) {
   const styles = toastStyles[type];
-  return <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-extrabold ${styles.iconContainer}`} aria-hidden="true">{styles.icon}</span>;
+  const Icon = toastIcons[type];
+  return <span className={`grid size-7 shrink-0 place-items-center rounded-full ${styles.iconContainer}`} aria-hidden="true"><Icon className="size-4" strokeWidth={2} /></span>;
 }
 
 function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) => void }) {

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { XGoalMark } from "../logo";
 import { Tooltip } from "../tooltip";
-import { ChevronRightIcon, CreditIcon, GoalIcon, GridIcon, PanelLeftIcon, PlusIcon, SettingsIcon, WorkflowIcon } from "./icons";
+import { ChevronRightIcon, CreditIcon, GoalIcon, GridIcon, PanelLeftIcon, PlusIcon, SignOutIcon, WorkflowIcon } from "./icons";
 import type { DrawerState, UserSummary } from "./types";
 
 function UserAvatar({ user }: { user: UserSummary }) {
@@ -154,7 +154,7 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           <ChevronRightIcon />
         </Link>
         <button type="button" onClick={onSignOut} className="mt-2 flex w-full items-center gap-3 whitespace-nowrap rounded-xl px-2 py-2 text-left text-xs font-semibold text-muted transition-colors hover:bg-wash hover:text-ink">
-          <SettingsIcon />
+          <SignOutIcon />
           Sign out
         </button>
       </footer>

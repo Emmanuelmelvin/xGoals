@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { PERMISSION_GROUPS, createDeployment, createGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "../components/dashboard/icons";
+import { ArrowLeftIcon, CheckIcon, ChevronDownIcon, PlusIcon, TrashIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
 
@@ -36,7 +36,7 @@ function StepIndicator({ step }: { step: number }) {
               className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors ${isDone ? "bg-blue text-white" : isCurrent ? "bg-blue-pale text-blue-dark" : "bg-wash text-muted"
                 }`}
             >
-              {isDone ? "✓" : index + 1}
+              {isDone ? <CheckIcon className="size-3.5" /> : index + 1}
             </span>
             <span className={`truncate text-xs font-bold sm:text-sm ${isCurrent ? "text-ink" : "text-muted"}`}>{label}</span>
             {index < STEPS.length - 1 ? <span className="mx-1 hidden h-px min-w-4 flex-1 bg-line sm:block" aria-hidden="true" /> : null}
@@ -186,8 +186,8 @@ function NewGoalPage() {
   return (
     <section className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur sm:px-8">
-        <Link to="/app/goals" search={goalsSearch} className="text-sm font-semibold text-muted transition-colors hover:text-ink">
-          ← Goals
+        <Link to="/app/goals" search={goalsSearch} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink">
+          <ArrowLeftIcon /> Goals
         </Link>
         <span className="inline-flex rounded-full bg-wash px-2.5 py-1 text-xs font-bold text-muted">Step {step + 1} of 3</span>
       </header>

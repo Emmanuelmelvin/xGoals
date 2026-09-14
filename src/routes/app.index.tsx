@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
+import { GoalCardActions, GoalCardMeta } from "../components/dashboard/goal-card";
+import { ChevronRightIcon, GoalIcon, PlusIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
 
 export const Route = createFileRoute("/app/")({
@@ -22,7 +24,5 @@ function OverviewPage() {
   </section>;
 }
 
-function PlusIcon() { return <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>; }
-function GoalIcon() { return <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5" /><circle cx="12" cy="12" r="3" /><path d="m17.5 6.5 2-2M19.5 4.5h-3M19.5 4.5v3" /></svg>; }
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) { return <article className="rounded-2xl border border-line bg-paper p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{label}</p><p className="mt-4 text-3xl font-semibold tracking-[-0.06em]">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></article>; }
-function GoalCard({ goal }: { goal: Goal }) { return <li id={`goal-${goal.id}`} className="rounded-2xl border border-line bg-white p-5 transition-colors hover:border-blue sm:p-6"><header className="flex items-start justify-between gap-4"><section className="min-w-0"><h3 className="truncate text-lg font-semibold tracking-[-0.04em]">{goal.title}</h3></section><Tooltip label={`Open ${goal.title}`} placement="top"><button type="button" className="rounded-lg p-2 text-muted hover:bg-wash hover:text-ink" aria-label={`Open ${goal.title}`}><svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg></button></Tooltip></header><footer className="mt-5 flex items-center justify-between gap-4 border-t border-line pt-4 text-xs text-muted"><span>{goal.workflowCount} workflows</span><span>Updated {goal.updatedAt}</span></footer></li>; }
+function GoalCard({ goal }: { goal: Goal }) { return <li id={`goal-${goal.id}`} className="rounded-2xl border border-line bg-white p-5 transition-colors hover:border-blue sm:p-6"><header className="flex items-start justify-between gap-4"><section className="min-w-0"><h3 className="truncate text-lg font-semibold tracking-[-0.04em]">{goal.title}</h3></section><span className="flex shrink-0 items-center gap-0.5"><GoalCardActions goal={goal} /><Tooltip label={`Open ${goal.title}`} placement="top"><button type="button" className="rounded-lg p-2 text-muted hover:bg-wash hover:text-ink" aria-label={`Open ${goal.title}`}><ChevronRightIcon /></button></Tooltip></span></header><footer className="mt-5 pt-4"><GoalCardMeta goal={goal} /></footer></li>; }

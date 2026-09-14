@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { ArrowUpRight } from "lucide-react";
 import { XGoalMark } from "../components/logo";
 import { createClient } from "../lib/supabase/client";
 
@@ -26,21 +27,7 @@ const STEPS = [
 ];
 
 function ArrowUpRightIcon({ className = "size-5" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6.5 17.5 17.5 6.5" />
-      <path d="M8 6.5h9.5V16" />
-    </svg>
-  );
+  return <ArrowUpRight className={className} aria-hidden="true" strokeWidth={1.8} />;
 }
 
 function GoalBoard() {

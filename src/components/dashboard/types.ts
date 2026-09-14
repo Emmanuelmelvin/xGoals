@@ -1,14 +1,26 @@
-import type { ReactNode } from "react";
-
 export type DrawerState = "open" | "closed";
 
 /** Lifecycle of a deployment (a workflow running from a goal). */
 export type DeploymentStatus = "running" | "paused" | "stopped";
 
+export type WorkflowStatusBreakdown = {
+  running: number;
+  paused: number;
+  stopped: number;
+};
+
+export type Milestone = {
+  title: string;
+  completed: boolean;
+};
+
 export type Goal = {
   id: string;
   title: string;
   workflowCount: number;
+  workflows: WorkflowStatusBreakdown;
+  branchCount: number;
+  milestones: Milestone[];
   updatedAt: string;
 };
 
@@ -36,5 +48,3 @@ export type DashboardContextValue = {
   refreshGoals: () => Promise<void>;
   openCreateGoal: () => void;
 };
-
-export type IconProps = { children: ReactNode; className?: string };
