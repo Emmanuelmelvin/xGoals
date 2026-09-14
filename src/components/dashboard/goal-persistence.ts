@@ -36,6 +36,8 @@ export type PermissionCatalogEntry = {
   permission: string;
   label: string;
   description: string;
+  /** Marks scopes that act publicly or irreversibly on the user's behalf. */
+  sensitive?: boolean;
 };
 
 export type PermissionGroup = {
@@ -43,32 +45,54 @@ export type PermissionGroup = {
   entries: PermissionCatalogEntry[];
 };
 
-/** Mirrors the agent's allowed permission catalog (see agent/main.py). */
+/**
+ * Draftable X API OAuth 2.0 scopes, per
+ * https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code
+ * (`offline.access` is intentionally excluded: it governs the X connection
+ * itself, not an individual goal.)
+ */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
-    title: "Your account",
+    title: "Read your account",
     entries: [
-      { permission: "profile:read", label: "Read your profile", description: "Let the agent see your X profile details." },
-      { permission: "profile:update", label: "Update your profile", description: "Let the agent change your display name, bio, or avatar." },
+      { permission: "users.read", label: "Read profiles", description: "See any account you can view, including protected accounts." },
+      { permission: "users.email", label: "Read account email", description: "See the email address on the connected account." },
+      { permission: "follows.read", label: "Read follows", description: "See who follows you and who you follow." },
+      { permission: "mute.read", label: "Read muted accounts", description: "See the accounts you have muted." },
+      { permission: "block.read", label: "Read blocked accounts", description: "See the accounts you have blocked." },
     ],
   },
   {
-    title: "Posts and drafts",
+    title: "Read content",
     entries: [
-      { permission: "posts:read", label: "Read posts", description: "Let the agent read your posts and drafts." },
-      { permission: "posts:draft:create", label: "Create drafts", description: "Let the agent prepare draft posts for your review." },
-      { permission: "posts:draft:update", label: "Edit drafts", description: "Let the agent revise drafts before you approve them." },
-      { permission: "posts:draft:delete", label: "Delete drafts", description: "Let the agent discard drafts you no longer need." },
-      { permission: "posts:create", label: "Publish posts", description: "Let the agent publish posts to your account." },
-      { permission: "posts:delete", label: "Delete posts", description: "Let the agent remove published posts." },
+      { permission: "tweet.read", label: "Read posts", description: "See posts you can view, including from protected accounts." },
+      { permission: "like.read", label: "Read likes", description: "See posts you have liked and likes you can view." },
+      { permission: "bookmark.read", label: "Read bookmarks", description: "See your bookmarked posts." },
+      { permission: "list.read", label: "Read lists", description: "See lists, members, and followers, including private lists." },
+      { permission: "space.read", label: "Read Spaces", description: "Find live and scheduled audio conversations." },
+      { permission: "broadcast.read", label: "Watch broadcasts", description: "View your live broadcasts and their chat." },
+      { permission: "dm.read", label: "Read direct messages", description: "See your direct messages, including from protected accounts." },
     ],
   },
   {
-    title: "Insights",
+    title: "Act for you",
     entries: [
-      { permission: "mentions:read", label: "Read mentions", description: "Let the agent see posts that mention you." },
-      { permission: "analytics:read", label: "Read analytics", description: "Let the agent see how your posts perform." },
-      { permission: "search:read", label: "Search X", description: "Let the agent search public posts for research." },
+      { permission: "tweet.write", label: "Publish and delete posts", description: "Post, repost, and delete posts on your behalf.", sensitive: true },
+      { permission: "tweet.moderate.write", label: "Moderate replies", description: "Hide and unhide replies to your posts." },
+      { permission: "like.write", label: "Like posts", description: "Like and unlike posts on your behalf." },
+      { permission: "follows.write", label: "Follow accounts", description: "Follow and unfollow accounts on your behalf." },
+      { permission: "dm.write", label: "Send direct messages", description: "Send and manage direct messages on your behalf.", sensitive: true },
+      { permission: "list.write", label: "Manage lists", description: "Create and manage lists on your behalf." },
+      { permission: "media.write", label: "Upload media", description: "Upload images and video for posts." },
+      { permission: "broadcast.write", label: "Manage broadcasts", description: "Manage live broadcasts and send chat messages on your behalf." },
+    ],
+  },
+  {
+    title: "Restrict others",
+    entries: [
+      { permission: "block.write", label: "Block accounts", description: "Block and unblock accounts on your behalf.", sensitive: true },
+      { permission: "mute.write", label: "Mute accounts", description: "Mute and unmute accounts on your behalf." },
+      { permission: "bookmark.write", label: "Manage bookmarks", description: "Bookmark posts and remove bookmarks." },
     ],
   },
 ];

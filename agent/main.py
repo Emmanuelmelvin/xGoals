@@ -17,21 +17,36 @@ logging.basicConfig(
 logger = logging.getLogger("xgoal.agent")
 
 
-# Canonical permission catalog. The web app mirrors this list when users
+# Canonical permission catalog: the draftable X API OAuth 2.0 scopes, per
+# https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code
+# (`offline.access` is intentionally excluded: it governs the X connection
+# itself, not an individual goal.) The web app mirrors this list when users
 # grant permissions during goal creation (see PERMISSION_GROUPS in
 # src/components/dashboard/goal-persistence.ts).
 ALLOWED_PERMISSIONS = {
-    "profile:read",
-    "profile:update",
-    "posts:read",
-    "posts:draft:create",
-    "posts:draft:update",
-    "posts:draft:delete",
-    "posts:create",
-    "posts:delete",
-    "mentions:read",
-    "analytics:read",
-    "search:read",
+    "users.read",
+    "users.email",
+    "follows.read",
+    "mute.read",
+    "block.read",
+    "tweet.read",
+    "like.read",
+    "bookmark.read",
+    "list.read",
+    "space.read",
+    "broadcast.read",
+    "dm.read",
+    "tweet.write",
+    "tweet.moderate.write",
+    "like.write",
+    "follows.write",
+    "dm.write",
+    "list.write",
+    "media.write",
+    "broadcast.write",
+    "block.write",
+    "mute.write",
+    "bookmark.write",
 }
 
 

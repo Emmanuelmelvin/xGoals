@@ -33,9 +33,8 @@ function StepIndicator({ step }: { step: number }) {
         return (
           <li key={label} className="flex min-w-0 flex-1 items-center gap-2" aria-current={isCurrent ? "step" : undefined}>
             <span
-              className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors ${
-                isDone ? "bg-blue text-white" : isCurrent ? "bg-blue-pale text-blue-dark" : "bg-wash text-muted"
-              }`}
+              className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors ${isDone ? "bg-blue text-white" : isCurrent ? "bg-blue-pale text-blue-dark" : "bg-wash text-muted"
+                }`}
             >
               {isDone ? "✓" : index + 1}
             </span>
@@ -77,7 +76,6 @@ function NewGoalPage() {
   const [milestones, setMilestones] = useState<string[]>([""]);
   const [granted, setGranted] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const goalsSearch = drawer ? { drawer } : {};
 
@@ -99,13 +97,12 @@ function NewGoalPage() {
   }
 
   function goNext() {
-    setError(null);
     if (step === 0 && !detailsValid) {
-      setError("Give the goal a title and a short description to continue.");
+      toast.error("Add a title and description to continue.");
       return;
     }
     if (step === 1 && !milestonesValid) {
-      setError(`Each milestone needs at least ${MILESTONE_MIN_LENGTH} characters.`);
+      toast.error(`Each milestone needs at least ${MILESTONE_MIN_LENGTH} characters.`);
       return;
     }
     setStep(step + 1);
@@ -150,7 +147,7 @@ function NewGoalPage() {
 
   return (
     <section className="min-h-screen bg-paper">
-      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-line px-5 py-3 sm:px-8">
+      <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper/95 px-5 py-3 backdrop-blur sm:px-8">
         <Link to="/app/goals" search={goalsSearch} className="text-sm font-semibold text-muted transition-colors hover:text-ink">
           ← Goals
         </Link>
@@ -208,14 +205,14 @@ function NewGoalPage() {
               </p>
               <ul className="mt-4 space-y-3">
                 {milestones.map((milestone, index) => (
-                  <li key={index} className="flex items-start gap-2">
+                  <li key={index} className="flex items-center gap-2">
                     <Tooltip label={milestones.length <= 1 ? "A goal needs at least one milestone" : `Remove milestone ${index + 1}`} placement="top">
                       <button
                         type="button"
                         onClick={() => removeMilestone(index)}
                         disabled={milestones.length <= 1}
                         aria-label={milestones.length <= 1 ? "Cannot remove the last milestone" : `Remove milestone ${index + 1}`}
-                        className="mt-2 grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-white text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted"
+                        className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-white text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted"
                       >
                         <TrashIcon />
                       </button>
@@ -240,13 +237,13 @@ function NewGoalPage() {
                           type="button"
                           onClick={() => setMilestones([...milestones, ""])}
                           aria-label="Add milestone"
-                          className="mt-2 grid size-9 shrink-0 place-items-center rounded-xl bg-blue text-white"
+                          className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue text-white"
                         >
                           <PlusIcon />
                         </button>
                       </Tooltip>
                     ) : (
-                      <span className="mt-2 size-9 shrink-0" aria-hidden="true" />
+                      <span className="size-9 shrink-0" aria-hidden="true" />
                     )}
                   </li>
                 ))}
@@ -277,7 +274,14 @@ function NewGoalPage() {
                           className={`flex items-center gap-4 rounded-2xl border p-4 transition-colors ${checked ? "border-blue/40 bg-blue-pale/40" : "border-line bg-white"}`}
                         >
                           <section className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold">{entry.label}</p>
+                            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                              {entry.label}
+                              {entry.sensitive ? (
+                                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-red-700">
+                                  High impact
+                                </span>
+                              ) : null}
+                            </p>
                             <p className="mt-0.5 text-xs leading-5 text-muted">{entry.description}</p>
                           </section>
                           <PermissionSwitch checked={checked} onChange={(next) => togglePermission(entry.permission, next)} label={entry.label} />
@@ -287,11 +291,6 @@ function NewGoalPage() {
                   </ul>
                 </section>
               ))}
-
-              <section className="rounded-2xl border border-dashed border-line bg-wash p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Connected apps · coming soon</p>
-                <p className="mt-2 text-xs leading-5 text-muted">Google Forms, Email, Slack, Discord, and more will appear here.</p>
-              </section>
             </section>
           ) : null}
 
