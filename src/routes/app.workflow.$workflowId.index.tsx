@@ -464,22 +464,6 @@ function WorkflowDetailPage() {
             )}
             <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time editing the goal won't change this run.</p>
           </article>
-
-          <article className="rounded-3xl border border-red-200 bg-white p-6 sm:p-7">
-            <h2 className="text-xl font-semibold tracking-[-0.04em]">Danger zone</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Deleting removes this workflow and its run history. The goal it came from is untouched.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteOpen(true)}
-                className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition-colors hover:bg-red-50"
-              >
-                Delete workflow
-              </button>
-            </div>
-          </article>
         </section>
       )}
       {workflow && deleteOpen ? (
