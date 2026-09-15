@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "./server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { logger } from "../logger";
-import { env } from "../env";
 
 export const exchangeCodeForSession = createServerFn({ method: "GET" })
   .validator((data: { code: string }) => data)
@@ -45,11 +44,11 @@ export const exchangeCodeForSession = createServerFn({ method: "GET" })
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
-          const url = env.VITE_SUPABASE_URL;
-          const serviceKey = env.SUPABASE_SECRET_KEY;
+          const url = process.env.VITE_SUPABASE_URL;
+          const serviceKey = process.env.SUPABASE_SECRET_KEY;
           if (url && serviceKey) {
             const service = createServiceClient(url, serviceKey);
-            const scopesRaw = env.X_OAUTH_SCOPES ?? "users.read tweet.read offline.access";
+            const scopesRaw = process.env.X_OAUTH_SCOPES ?? "users.read tweet.read offline.access";
             const scopes = scopesRaw
               .split(/[\s,]+/)
               .map((s) => s.trim())

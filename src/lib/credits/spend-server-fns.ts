@@ -2,12 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "../supabase/server";
 import { logger } from "../logger";
-import { env } from "../env";
 import { ConfigError } from "../errors";
 
 function getServiceClient() {
-  const url = env.VITE_SUPABASE_URL;
-  const serviceKey = env.SUPABASE_SECRET_KEY;
+  const url = process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY;
   if (!url || !serviceKey) throw new ConfigError("Missing Supabase service environment variables.");
   return createServiceClient(url, serviceKey);
 }

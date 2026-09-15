@@ -2,14 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { logger } from "../lib/logger";
-import { env } from "../lib/env";
 import { ConfigError } from "../lib/errors";
 
 export const Route = createFileRoute("/api/bachs/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = env.BACHS_WEBHOOK_SECRET;
+        const secret = process.env.BACHS_WEBHOOK_SECRET;
         if (!secret) {
           logger.error("bachs-webhook BACHS_WEBHOOK_SECRET is not configured");
           return json({ error: "Webhook not configured." }, 500);
@@ -108,8 +107,8 @@ function parseEnvelope(envelope: unknown): BachsEvent | null {
 }
 
 function getServiceClient() {
-  const url = env.VITE_SUPABASE_URL;
-  const serviceKey = env.SUPABASE_SECRET_KEY;
+  const url = process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY;
   if (!url || !serviceKey) throw new ConfigError("Missing Supabase service environment variables.");
   return createServiceClient(url, serviceKey);
 }

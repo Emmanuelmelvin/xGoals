@@ -8,10 +8,8 @@ type Level = "error" | "warn" | "info" | "debug";
 
 const levelOrder: Record<Level, number> = { error: 0, warn: 1, info: 2, debug: 3 };
 
-import { env } from "./env";
-
 function getLevel(): Level {
-  const raw = (env.VITE_LOG_LEVEL as string | undefined)?.toLowerCase() ?? "info";
+  const raw = (import.meta.env.VITE_LOG_LEVEL as string | undefined)?.toLowerCase() ?? "info";
   if (raw === "error" || raw === "warn" || raw === "info" || raw === "debug") return raw;
   return "info";
 }

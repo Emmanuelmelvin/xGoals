@@ -9,7 +9,6 @@ import {
   validatePurchaseCents,
 } from "../../components/dashboard/credit-math";
 import { logger } from "../logger";
-import { env } from "../env";
 
 type BachsCheckoutResponse = {
   checkout_id?: unknown;
@@ -19,9 +18,9 @@ type BachsCheckoutResponse = {
 export const createCreditCheckout = createServerFn({ method: "POST" })
   .validator((data: { usdAmount: string }) => data)
   .handler(async ({ data }) => {
-    const apiKey = env.BACHS_API_KEY;
-    const baseUrl = env.BACHS_API_BASE_URL ?? "https://sandbox-api.bachs.io";
-    const appUrl = env.APP_URL ?? "http://127.0.0.1:3000";
+    const apiKey = process.env.BACHS_API_KEY;
+    const baseUrl = process.env.BACHS_API_BASE_URL ?? "https://sandbox-api.bachs.io";
+    const appUrl = process.env.APP_URL ?? "http://127.0.0.1:3000";
     if (!apiKey) {
       logger.warn("checkout bachs api key not configured");
       return { checkoutUrl: null as string | null, error: "Billing is not configured yet." };

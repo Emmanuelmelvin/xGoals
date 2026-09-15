@@ -15,10 +15,9 @@
  */
 
 import winston from "winston";
-import { env } from "./env";
 
-const rawLevel = (env.LOG_LEVEL ?? env.AI_LOG_LEVEL ?? "").trim().toLowerCase();
-const isProd = env.NODE_ENV === "production";
+const rawLevel = (process.env.LOG_LEVEL ?? process.env.AI_LOG_LEVEL ?? "").trim().toLowerCase();
+const isProd = process.env.NODE_ENV === "production";
 
 // Default: info in prod, debug in dev (more verbose locally)
 const defaultLevel = isProd ? "info" : "debug";

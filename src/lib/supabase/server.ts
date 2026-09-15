@@ -4,12 +4,11 @@ import {
   setCookie,
   setResponseHeader,
 } from "@tanstack/react-start/server";
-import { env } from "../env";
 import { ConfigError } from "../errors";
 
 export function createClient() {
-  const url = env.VITE_SUPABASE_URL;
-  const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.VITE_SUPABASE_URL;
+  const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
     throw new ConfigError("Missing Supabase server environment variables.");
