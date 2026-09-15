@@ -1,9 +1,12 @@
 """Poll loop: the agent wakes itself, no manual POST needed.
 
-Every AGENT_POLL_SECONDS the loop claims due runs (one claim per workflow,
-oldest first) and executes them, up to MAX_CONCURRENT_RUNS at once. A comment
-left on any draft is therefore picked up by the next tick automatically —
-read_feedback() runs inside every execution, so steering never needs a rerun.
+Every AGENT_POLL_SECONDS the loop claims due runs (oldest first) and executes
+them, up to MAX_CONCURRENT_RUNS at once. A comment left on any draft is picked
+up by the next tick automatically — read_feedback() runs inside every
+execution, so steering never needs a rerun.
+
+Claims are quick and sequential; executions run concurrently (they hold the
+LLM wait). Each tick drains up to `limit` runs, then sleeps.
 
 Runs as a FastAPI lifespan task in main.py. EventBridge replaces this loop on
 AgentCore; the claim RPC keeps both honest (SKIP LOCKED, one active run max).
@@ -36,14 +39,7 @@ def _max_concurrent() -> int:
         return 3
 
 
-async def _run_one(workflow_id: str | None = None) -> None:
-    try:
-        job, _envelope = await asyncio.to_thread(claim_next, workflow_id)
-    except Exception:
-        logger.exception("claim_failed")
-        return
-    if job is None:
-        return
+async def _execute(job) -> None:
     try:
         result = await asyncio.to_thread(execute_run, job)
         logger.info("tick_run_done run=%s status=%s", job.run_id, result.get("status"))
@@ -55,30 +51,21 @@ async def poll_forever(stop: asyncio.Event) -> None:
     interval = _poll_seconds()
     limit = _max_concurrent()
     logger.info("scheduler_start every=%ss max_concurrent=%s", interval, limit)
-    semaphore = asyncio.Semaphore(limit)
-    pending: set[asyncio.Task] = set()
-
-    async def _guarded() -> None:
-        async with semaphore:
-            await _run_one()
 
     while not stop.is_set():
+        batch: set[asyncio.Task] = set()
         try:
-            job_available = True
-            while job_available and not stop.is_set():
-                # Claim guard: peek one claim at a time; stop spawning when dry.
-                # _run_one handles its own empty-claim quietly.
-                before = len(pending)
-                task = asyncio.create_task(_guarded())
-                pending.add(task)
-                task.add_done_callback(pending.discard)
-                # Only keep spawning while slots are free; then sleep.
-                if len([t for t in pending if not t.done()]) >= limit:
+            while len(batch) < limit and not stop.is_set():
+                try:
+                    job, _envelope = await asyncio.to_thread(claim_next, None)
+                except Exception:
+                    logger.exception("claim_failed")
                     break
-                # Single-claim check to avoid busy-spawning when empty:
-                # sleep first, the next tick re-evaluates.
-                job_available = False
-                _ = before
+                if job is None:
+                    break
+                batch.add(asyncio.create_task(_execute(job)))
+            if batch:
+                await asyncio.wait(batch)
         except Exception:
             logger.exception("tick_failed")
         try:
