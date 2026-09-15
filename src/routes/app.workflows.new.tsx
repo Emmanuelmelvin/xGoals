@@ -77,7 +77,7 @@ function NewWorkflowPage() {
 
   useEffect(() => {
     if (!selectedGoal || nameTouched) return;
-    setName(selectedGoal.title);
+    setName(`Run (${selectedGoal.title})`);
   }, [selectedGoal, nameTouched]);
 
   useEffect(() => {

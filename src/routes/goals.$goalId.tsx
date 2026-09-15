@@ -170,11 +170,8 @@ function PublicGoalPage() {
                 ) : (
                   <ol className="mt-5 space-y-2.5 pl-6 marker:text-muted list-[lower-roman]">
                     {goal.milestones.map((milestone, index) => (
-                      <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6">
-                        <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                          {milestone.title}
-                        </span>
-                        <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
+                      <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6 text-ink">
+                        {milestone.title}
                       </li>
                     ))}
                   </ol>

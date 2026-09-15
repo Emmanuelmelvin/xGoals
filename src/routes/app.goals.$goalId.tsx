@@ -375,16 +375,25 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
         <div className="space-y-6">
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
             <h2 className="text-xl font-semibold tracking-[-0.04em]">Milestones</h2>
+            <p className="mt-1 text-sm text-muted">Defined here, tracked in workflows.</p>
             {totalMilestones === 0 ? (
-              <p className="mt-2 text-sm leading-6 text-muted">No milestones yet. Add checkpoints to track progress here.</p>
+              <div className="mt-2">
+                <p className="text-sm leading-6 text-muted">No milestones yet. Add checkpoints to track progress here.</p>
+                {onEdit ? (
+                  <button
+                    type="button"
+                    onClick={onEdit}
+                    className="mt-3 rounded-xl border border-line px-3 py-2 text-sm font-bold text-ink transition-colors hover:border-ink"
+                  >
+                    Add milestones
+                  </button>
+                ) : null}
+              </div>
             ) : (
               <ol className="mt-5 space-y-2.5 pl-6 marker:text-muted list-[lower-roman]">
                 {goal.milestones.map((milestone, index) => (
-                  <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6">
-                    <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                      {milestone.title}
-                    </span>
-                    <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
+                  <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6 text-ink">
+                    {milestone.title}
                   </li>
                 ))}
               </ol>

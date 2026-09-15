@@ -296,12 +296,11 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
                 <li key={`${milestone.title}-${index}`} className="flex items-start gap-2.5 text-sm leading-5">
                   <span
                     aria-hidden="true"
-                    className={`mt-1.5 size-1.5 shrink-0 rounded-full ${milestone.completed ? "bg-emerald-500" : "bg-slate-300"}`}
+                    className="mt-1.5 size-1.5 shrink-0 rounded-full bg-slate-300"
                   />
-                  <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
+                  <span className="text-ink">
                     {milestone.title}
                   </span>
-                  <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
                 </li>
               ))}
             </ul>

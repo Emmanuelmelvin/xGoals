@@ -23,6 +23,7 @@ function NewBranchPage() {
   const [publicParent, setPublicParent] = useState<{ goalId: string; goal: PublicGoalDetail | null } | null>(null);
   const parent: Goal | undefined =
     ownParent ?? (publicParent && publicParent.goalId === goalId ? (publicParent.goal ?? undefined) : undefined);
+  const isOwnParent = !!ownParent;
   const parentLoading = isGoalsLoading || (!ownParent && publicParent?.goalId !== goalId);
   const notFound = !parentLoading && !parent;
   const cannotBranch = !!parent?.parentGoalId;
@@ -173,13 +174,23 @@ function NewBranchPage() {
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
               Only top level goals can have branches. Create a branch from the original goal instead.
             </p>
-            <Link
-              to="/app/goals/$goalId"
-              params={{ goalId: parent.id }}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
-            >
-              Back to goal
-            </Link>
+            {isOwnParent ? (
+              <Link
+                to="/app/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
+              >
+                Back to goal
+              </Link>
+            ) : (
+              <Link
+                to="/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
+              >
+                Back to goal
+              </Link>
+            )}
           </section>
         </section>
       </section>
@@ -189,13 +200,23 @@ function NewBranchPage() {
   return (
     <section className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-4 border-b border-line bg-paper px-5 py-3 sm:px-8">
-        <Link
-          to="/app/goals/$goalId"
-          params={{ goalId: parent.id }}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
-        >
-          <ArrowLeftIcon /> Back to goal
-        </Link>
+        {isOwnParent ? (
+          <Link
+            to="/app/goals/$goalId"
+            params={{ goalId: parent.id }}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
+          >
+            <ArrowLeftIcon /> Back to goal
+          </Link>
+        ) : (
+          <Link
+            to="/goals/$goalId"
+            params={{ goalId: parent.id }}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
+          >
+            <ArrowLeftIcon /> Back to goal
+          </Link>
+        )}
         <span className="inline-flex rounded-full bg-wash px-2.5 py-1 text-xs font-bold text-muted">New branch</span>
       </header>
 
@@ -205,13 +226,23 @@ function NewBranchPage() {
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.07em] sm:text-5xl">Branch off this goal.</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
             Starting from{" "}
-            <Link
-              to="/app/goals/$goalId"
-              params={{ goalId: parent.id }}
-              className="font-semibold text-blue hover:underline"
-            >
-              {parent.title}
-            </Link>{" "}
+            {isOwnParent ? (
+              <Link
+                to="/app/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="font-semibold text-blue hover:underline"
+              >
+                {parent.title}
+              </Link>
+            ) : (
+              <Link
+                to="/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="font-semibold text-blue hover:underline"
+              >
+                {parent.title}
+              </Link>
+            )}{" "}
             — keep what works, remove what doesn't, add what's missing.
           </p>
         </header>
@@ -285,13 +316,23 @@ function NewBranchPage() {
             {granted.length === 1 ? "" : "s"}
           </p>
           <div className="flex gap-2">
-            <Link
-              to="/app/goals/$goalId"
-              params={{ goalId: parent.id }}
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
-            >
-              Cancel
-            </Link>
+            {isOwnParent ? (
+              <Link
+                to="/app/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
+              >
+                Cancel
+              </Link>
+            ) : (
+              <Link
+                to="/goals/$goalId"
+                params={{ goalId: parent.id }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
+              >
+                Cancel
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => void handleSave()}

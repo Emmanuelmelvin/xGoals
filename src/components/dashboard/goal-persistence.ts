@@ -287,6 +287,67 @@ export async function updateGoalParent({ ownerId, goalId, parentGoalId }: { owne
   return { error: null as string | null };
 }
 
+export async function updateGoalMilestone({ ownerId, goalId, index, completed }: { ownerId: string; goalId: string; index: number; completed: boolean }) {
+  const supabase = createClient();
+  const { data, error: loadError } = await supabase
+    .from("goals")
+    .select("plan")
+    .eq("id", goalId)
+    .eq("owner_id", ownerId)
+    .single();
+  if (loadError || !data) return { error: loadError?.message ?? "Goal not found." };
+
+  const plan = (data as { plan: unknown }).plan as { milestones?: unknown; skills?: unknown } | null;
+  const milestones = parseMilestoneList(plan?.milestones);
+  if (index < 0 || index >= milestones.length) return { error: "Milestone not found." };
+  milestones[index] = { ...milestones[index], completed };
+  const skills = parseSkillList(plan?.skills);
+
+  const { error } = await supabase
+    .from("goals")
+    .update({ plan: { version: 1, milestones, skills } })
+    .eq("id", goalId)
+    .eq("owner_id", ownerId);
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
+export async function updateWorkflowMilestone({ ownerId, workflowId, index, completed }: { ownerId: string; workflowId: string; index: number; completed: boolean }) {
+  const supabase = createClient();
+  const { data, error: loadError } = await supabase
+    .from("workflows")
+    .select("definition")
+    .eq("id", workflowId)
+    .eq("owner_id", ownerId)
+    .single();
+  if (loadError || !data) return { error: loadError?.message ?? "Workflow not found." };
+
+  const definition = parseWorkflowDefinition((data as { definition: unknown }).definition);
+  if (index < 0 || index >= definition.milestones.length) return { error: "Milestone not found." };
+  const milestones = definition.milestones.map((milestone, i) =>
+    i === index ? { ...milestone, completed } : milestone,
+  );
+
+  const { error } = await supabase
+    .from("workflows")
+    .update({
+      definition: {
+        version: 1,
+        milestones,
+        skills: definition.skills,
+        permissions: definition.permissions,
+        approval_required: true,
+        run_length_days: definition.runLengthDays,
+        ends_at: definition.endsAt,
+        starts_at: definition.startsAt,
+      },
+    })
+    .eq("id", workflowId)
+    .eq("owner_id", ownerId);
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
 export async function loadGoalPermissions(ownerId: string, goalId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -336,8 +397,9 @@ async function loadOwners(ownerIds: string[]) {
   const owners = new Map<string, PublicGoalOwner | null>();
   if (unique.length === 0) return owners;
   const supabase = createClient();
+  // Public identity only — public_profiles exposes no emails or tokens.
   const { data, error } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id,display_name,x_handle,avatar_url")
     .in("id", unique);
   if (error) return owners;

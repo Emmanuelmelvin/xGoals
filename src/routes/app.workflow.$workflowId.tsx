@@ -3,7 +3,8 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { StatusPill, SkillList } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteWorkflow, loadWorkflow, loadWorkflowRuns, updateWorkflowStatus } from "../components/dashboard/goal-persistence";
-import { PauseIcon, PlayIcon, ReRunIcon } from "../components/dashboard/icons";
+import { PauseIcon, PlayIcon, ReRunIcon, TrashIcon } from "../components/dashboard/icons";
+import { fieldInputClass } from "../components/dashboard/goal-form";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
 import type { Deployment, DeploymentStatus, RunStatus, WorkflowRun } from "../components/dashboard/types";
@@ -72,6 +73,77 @@ function daysLeft(endsAt: string | null) {
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
+function DeleteWorkflowDialog({ workflowName, isRunning, runCount, isDeleting, onClose, onConfirm }: { workflowName: string; isRunning: boolean; runCount: number; isDeleting: boolean; onClose: () => void; onConfirm: () => void }) {
+  const [value, setValue] = useState("");
+  const confirmed = value.trim() === "confirm";
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    setValue("");
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="delete-workflow-title">
+      <button type="button" aria-label="Cancel deletion" onClick={onClose} className="absolute inset-0 cursor-default bg-ink/40" />
+      <section className="relative my-8 w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-xl sm:p-7">
+        <h2 id="delete-workflow-title" className="text-xl font-semibold tracking-[-0.04em]">
+          Delete this workflow?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          This permanently deletes <strong className="font-semibold text-ink">“{workflowName}”</strong>
+          {runCount > 0 ? (
+            <> and its <strong className="font-semibold text-ink">{runCount} run{runCount === 1 ? "" : "s"}</strong></>
+          ) : null}
+          . The goal it came from is untouched. This can't be undone.
+        </p>
+        {isRunning ? (
+          <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800" role="alert">
+            This workflow is still running — deleting will kill it immediately.
+          </p>
+        ) : null}
+        <label className="mt-5 block">
+          <span className="text-sm font-semibold">Type <span className="rounded-md bg-wash px-1.5 py-0.5 font-mono text-[0.8125rem]">confirm</span> to continue</span>
+          <input
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            autoFocus
+            autoComplete="off"
+            maxLength={32}
+            placeholder="confirm"
+            className={fieldInputClass}
+          />
+        </label>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isDeleting}
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!confirmed || isDeleting}
+            aria-busy={isDeleting}
+            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isDeleting ? "Deleting…" : "Delete workflow"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function WorkflowDetailPage() {
   const { workflowId } = Route.useParams();
   const { user, goals } = useDashboard();
@@ -82,7 +154,7 @@ function WorkflowDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -142,6 +214,10 @@ function WorkflowDetailPage() {
       setIsDeleting(false);
     }
   }
+
+  useEffect(() => {
+    setDeleteOpen(false);
+  }, [workflowId]);
 
   const parentGoal = workflow ? goals.find((goal) => goal.id === workflow.goalId) : undefined;
   const remaining = workflow ? daysLeft(workflow.definition.endsAt) : null;
@@ -245,6 +321,26 @@ function WorkflowDetailPage() {
                   </button>
                 </Tooltip>
               ) : null}
+              {workflow.status === "running" || workflow.status === "paused" ? (
+                <button
+                  type="button"
+                  onClick={() => void changeStatus("completed", "Workflow marked as complete")}
+                  disabled={isUpdating}
+                  className="inline-flex h-10 items-center rounded-xl border border-line bg-white px-4 text-sm font-bold text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUpdating ? "Saving…" : "Mark complete"}
+                </button>
+              ) : null}
+              <Tooltip label="Delete workflow">
+                <button
+                  type="button"
+                  onClick={() => setDeleteOpen(true)}
+                  aria-label={`Delete ${workflow.name}`}
+                  className="grid size-10 place-items-center rounded-xl border border-red-200 bg-white text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                >
+                  <TrashIcon />
+                </button>
+              </Tooltip>
             </div>
           </header>
 
@@ -309,7 +405,7 @@ function WorkflowDetailPage() {
                     "All milestones done"
                   )}
               </p>
-              <p className="mt-1 text-xs text-muted">Frozen at deploy time</p>
+              <p className="mt-1 text-xs text-muted">Frozen at deploy time · checked off by the agent</p>
             </article>
           </section>
 
@@ -374,39 +470,27 @@ function WorkflowDetailPage() {
               Deleting removes this workflow and its run history. The goal it came from is untouched.
             </p>
             <div className="mt-4 flex gap-2">
-              {confirmDelete ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete()}
-                    disabled={isDeleting}
-                    aria-busy={isDeleting}
-                    className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isDeleting ? "Deleting…" : "Confirm delete"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    disabled={isDeleting}
-                    className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink disabled:opacity-60"
-                  >
-                    Keep it
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(true)}
-                  className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition-colors hover:bg-red-50"
-                >
-                  Delete workflow
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition-colors hover:bg-red-50"
+              >
+                Delete workflow
+              </button>
             </div>
           </article>
         </section>
       )}
+      {workflow && deleteOpen ? (
+        <DeleteWorkflowDialog
+          workflowName={workflow.name}
+          isRunning={workflow.status === "running"}
+          runCount={runs.length}
+          isDeleting={isDeleting}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={() => void handleDelete()}
+        />
+      ) : null}
     </section>
   );
 }
