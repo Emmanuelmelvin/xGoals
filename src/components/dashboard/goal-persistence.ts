@@ -2,7 +2,7 @@ import { createClient } from "../../lib/supabase/client";
 import type { Deployment, DeploymentStatus, Goal, Milestone, RunStatus, WorkflowDefinition, WorkflowRun } from "./types";
 
 export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
-  return value === "running" || value === "paused" || value === "stopped";
+  return value === "running" || value === "paused" || value === "completed";
 }
 
 export function isRunStatus(value: unknown): value is RunStatus {
@@ -68,7 +68,7 @@ function toDeployment(row: { id: string; goal_id: string; name: string; status: 
     id: row.id,
     goalId: row.goal_id,
     name: row.name,
-    status: isDeploymentStatus(row.status) ? row.status : "stopped",
+    status: isDeploymentStatus(row.status) ? row.status : "paused",
     createdAt: toShortDate(row.created_at),
     definition: parseWorkflowDefinition(row.definition),
   };
@@ -85,13 +85,13 @@ export async function loadGoalsForUser(ownerId: string) {
   if (workflowsError) return { goals: [] as Goal[], error: workflowsError.message };
 
   const workflowCounts = new Map<string, number>();
-  const workflowBreakdowns = new Map<string, { running: number; paused: number; stopped: number }>();
+  const workflowBreakdowns = new Map<string, { running: number; paused: number; completed: number }>();
   for (const workflow of workflowRows ?? []) {
     if (typeof workflow.goal_id !== "string") continue;
     workflowCounts.set(workflow.goal_id, (workflowCounts.get(workflow.goal_id) ?? 0) + 1);
-    const breakdown = workflowBreakdowns.get(workflow.goal_id) ?? { running: 0, paused: 0, stopped: 0 };
+    const breakdown = workflowBreakdowns.get(workflow.goal_id) ?? { running: 0, paused: 0, completed: 0 };
     if (isDeploymentStatus(workflow.status)) breakdown[workflow.status] += 1;
-    else breakdown.stopped += 1;
+    else breakdown.paused += 1;
     workflowBreakdowns.set(workflow.goal_id, breakdown);
   }
 
@@ -114,7 +114,7 @@ export async function loadGoalsForUser(ownerId: string) {
       description: typeof goal.prompt === "string" && goal.prompt.trim() ? goal.prompt : null,
       parentGoalId: typeof goal.parent_goal_id === "string" && goal.parent_goal_id ? goal.parent_goal_id : null,
       workflowCount: workflowCounts.get(goal.id) ?? 0,
-      workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, stopped: 0 },
+      workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, completed: 0 },
       branchCount: branchCounts.get(goal.id) ?? 0,
       milestones: getMilestones(goal.plan),
       updatedAt: new Date(goal.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }),

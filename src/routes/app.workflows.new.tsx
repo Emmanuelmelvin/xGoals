@@ -4,6 +4,7 @@ import { useDashboard } from "../components/dashboard-layout";
 import { fieldInputClass, PermissionSwitch } from "../components/dashboard/goal-form";
 import { PERMISSION_GROUPS, createDeployment, loadGoalPermissions } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon } from "../components/dashboard/icons";
+import { SelectDropdown } from "../components/dropdown";
 import { useToast } from "../components/toast";
 import { DateTimePicker, addDays, formatDateLong, roundUpToNextHour, startOfDay } from "../components/dashboard/schedule-picker";
 
@@ -215,25 +216,22 @@ function NewWorkflowPage() {
         </header>
 
         <section className="space-y-5 rounded-3xl border border-line bg-white p-5 sm:p-6">
-          <label className="block">
-            <span className="text-sm font-semibold">Goal</span>
-            <select
+          <div className="block">
+            <span id="new-workflow-goal-label" className="text-sm font-semibold">Goal</span>
+            <SelectDropdown
+              ariaLabelledBy="new-workflow-goal-label"
               value={goalId}
-              onChange={(event) => {
-                setGoalId(event.target.value);
+              options={goals.map((goal) => ({ value: goal.id, label: goal.title }))}
+              onChange={(next) => {
+                setGoalId(next);
                 setNameTouched(false);
                 setScopeTouched(false);
               }}
-              className={`${fieldInputClass} mt-2`}
-            >
-              <option value="">Choose a goal…</option>
-              {goals.map((goal) => (
-                <option key={goal.id} value={goal.id}>
-                  {goal.title}
-                </option>
-              ))}
-            </select>
-          </label>
+              placeholder="Choose a goal…"
+              fullWidth
+              triggerClassName="mt-2"
+            />
+          </div>
           <label className="block">
             <span className="text-sm font-semibold">Run name</span>
             <input

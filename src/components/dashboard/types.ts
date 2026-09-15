@@ -1,12 +1,12 @@
 export type DrawerState = "open" | "closed";
 
 /** Lifecycle of a deployment (a workflow running from a goal). */
-export type DeploymentStatus = "running" | "paused" | "stopped";
+export type DeploymentStatus = "running" | "paused" | "completed";
 
 export type WorkflowStatusBreakdown = {
   running: number;
   paused: number;
-  stopped: number;
+  completed: number;
 };
 
 export type WorkflowDefinition = {

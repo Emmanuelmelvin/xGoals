@@ -4,6 +4,7 @@ import { useDashboard, type Goal } from "../components/dashboard-layout";
 import { GoalCardActions, GoalCardMeta, StatusPill, WorkflowStatusSummary } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
+import { SelectDropdown } from "../components/dropdown";
 import { fieldInputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
 import type { Deployment } from "../components/dashboard/types";
@@ -88,20 +89,20 @@ function DeleteBranchDialog({ noun, goalTitle, workflowCount, childBranches, isD
               </div>
             </div>
             {scope === "keep-one" ? (
-              <label className="mt-3 block">
-                <span className="text-xs font-semibold text-muted">Branch to keep</span>
-                <select
+              <div className="mt-3">
+                <span id="branch-keep-label" className="text-xs font-semibold text-muted">Branch to keep</span>
+                <SelectDropdown
+                  ariaLabelledBy="branch-keep-label"
                   value={keepGoalId ?? ""}
-                  onChange={(event) => setKeepGoalId(event.target.value || null)}
-                  className="mt-1.5 w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm font-semibold text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue/10"
-                >
-                  {childBranches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.title}{branch.workflowCount > 0 ? ` · ${branch.workflowCount} workflow${branch.workflowCount === 1 ? "" : "s"}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  options={childBranches.map((branch) => ({
+                    value: branch.id,
+                    label: `${branch.title}${branch.workflowCount > 0 ? ` · ${branch.workflowCount} workflow${branch.workflowCount === 1 ? "" : "s"}` : ""}`,
+                  }))}
+                  onChange={(next) => setKeepGoalId(next || null)}
+                  fullWidth
+                  triggerClassName="mt-1.5"
+                />
+              </div>
             ) : null}
           </fieldset>
         ) : null}

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "../components/dashboard/icons";
+import { DropdownItem, DropdownPanel, useDropdown } from "../components/dropdown";
 import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
 
@@ -55,8 +56,7 @@ function NewGoalPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [prefilledEdit, setPrefilledEdit] = useState(false);
   const [permissionsFailed, setPermissionsFailed] = useState(false);
-  const [deployMenuOpen, setDeployMenuOpen] = useState(false);
-  const deployMenuRef = useRef<HTMLDivElement>(null);
+  const deployMenu = useDropdown();
 
   const editGoal = edit ? goals.find((goal) => goal.id === edit) : undefined;
   const editNotFound = !!edit && !isGoalsLoading && !editGoal;
@@ -86,22 +86,6 @@ function NewGoalPage() {
       mounted = false;
     };
   }, [editGoal, prefilledEdit, user.id]);
-
-  useEffect(() => {
-    if (!deployMenuOpen) return;
-    function onPointerDown(event: PointerEvent) {
-      if (deployMenuRef.current && !deployMenuRef.current.contains(event.target as Node)) setDeployMenuOpen(false);
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setDeployMenuOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [deployMenuOpen]);
 
   const goalsSearch = drawer ? { drawer } : {};
 
@@ -165,7 +149,6 @@ function NewGoalPage() {
       return;
     }
     setIsSaving(true);
-    setDeployMenuOpen(false);
     try {
       const result = await createGoal({
         ownerId: user.id,
@@ -377,7 +360,7 @@ function NewGoalPage() {
                 {isSaving ? "Saving…" : "Save changes"}
               </button>
             ) : (
-              <div ref={deployMenuRef} className="relative">
+              <div ref={deployMenu.containerRef} className="relative">
                 <div className="flex">
                   <button
                     type="button"
@@ -390,9 +373,9 @@ function NewGoalPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDeployMenuOpen(!deployMenuOpen)}
+                    onClick={deployMenu.toggleMenu}
                     disabled={isSaving}
-                    aria-expanded={deployMenuOpen}
+                    aria-expanded={deployMenu.open}
                     aria-haspopup="menu"
                     aria-label="More creation options"
                     className="grid place-items-center rounded-l-none rounded-r-xl border-l border-white/30 bg-blue px-2.5 text-white disabled:cursor-not-allowed disabled:opacity-40"
@@ -400,27 +383,25 @@ function NewGoalPage() {
                     <ChevronDownIcon />
                   </button>
                 </div>
-                {deployMenuOpen ? (
-                  <div role="menu" aria-label="Creation options" className="absolute bottom-full right-0 z-20 mb-2 w-72 rounded-2xl border border-line bg-white p-1.5 shadow-lg">
-                    <button
-                      type="button"
-                      role="menuitem"
-                    onClick={() => void handleCreate("goal")}
-                      className="block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
-                    >
-                      <span className="block text-sm font-bold">Create goal</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-muted">Save milestones and permissions without deploying.</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => void handleCreate("deploy")}
-                      className="mt-1 block w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-wash"
-                    >
-                      <span className="block text-sm font-bold">Create goal and run deployment</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-muted">Create the goal and start a running deployment from it.</span>
-                    </button>
-                  </div>
+                {deployMenu.open ? (
+                  <DropdownPanel placement="top" align="end" widthClassName="w-72" ariaLabel="Creation options">
+                    <DropdownItem
+                      title="Create goal"
+                      description="Save milestones and permissions without deploying."
+                      onSelect={() => {
+                        deployMenu.closeMenu();
+                        void handleCreate("goal");
+                      }}
+                    />
+                    <DropdownItem
+                      title="Create goal and run deployment"
+                      description="Create the goal and start a running deployment from it."
+                      onSelect={() => {
+                        deployMenu.closeMenu();
+                        void handleCreate("deploy");
+                      }}
+                    />
+                  </DropdownPanel>
                 ) : null}
               </div>
             )}

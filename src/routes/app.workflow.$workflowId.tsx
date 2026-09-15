@@ -3,7 +3,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { MilestoneStatusIcon, StatusPill } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteWorkflow, loadWorkflow, loadWorkflowRuns, updateWorkflowStatus } from "../components/dashboard/goal-persistence";
-import { PauseIcon, PlayIcon, PlusIcon, StopIcon } from "../components/dashboard/icons";
+import { PauseIcon, PlayIcon, ReRunIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
 import type { Deployment, DeploymentStatus, RunStatus, WorkflowRun } from "../components/dashboard/types";
@@ -202,70 +202,48 @@ function WorkflowDetailPage() {
               )}
               {runLength !== null
                 ? ` · ${runLength}-day run${remaining !== null ? ` · ${remaining} day${remaining === 1 ? "" : "s"} left` : ""}`
-                : " · runs until stopped"}
+                : " · runs until completed"}
               {` · started ${workflow.createdAt || "recently"}`}.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {workflow.status === "running" ? (
-                <>
-                  <Tooltip label="Pause workflow">
-                    <button
-                      type="button"
-                      onClick={() => void changeStatus("paused", "Workflow paused")}
-                      disabled={isUpdating}
-                      aria-label={`Pause ${workflow.name}`}
-                      className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-                    >
-                      <PauseIcon />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Stop workflow">
-                    <button
-                      type="button"
-                      onClick={() => void changeStatus("stopped", "Workflow stopped")}
-                      disabled={isUpdating}
-                      aria-label={`Stop ${workflow.name}`}
-                      className="grid size-10 place-items-center rounded-xl bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-                    >
-                      <StopIcon />
-                    </button>
-                  </Tooltip>
-                </>
+                <Tooltip label="Pause workflow">
+                  <button
+                    type="button"
+                    onClick={() => void changeStatus("paused", "Workflow paused")}
+                    disabled={isUpdating}
+                    aria-label={`Pause ${workflow.name}`}
+                    className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                  >
+                    <PauseIcon />
+                  </button>
+                </Tooltip>
               ) : null}
               {workflow.status === "paused" ? (
-                <>
-                  <Tooltip label="Resume workflow">
-                    <button
-                      type="button"
-                      onClick={() => void changeStatus("running", "Workflow resumed")}
-                      disabled={isUpdating}
-                      aria-label={`Resume ${workflow.name}`}
-                      className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-                    >
-                      <PlayIcon />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label="Stop workflow">
-                    <button
-                      type="button"
-                      onClick={() => void changeStatus("stopped", "Workflow stopped")}
-                      disabled={isUpdating}
-                      aria-label={`Stop ${workflow.name}`}
-                      className="grid size-10 place-items-center rounded-xl bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-                    >
-                      <StopIcon />
-                    </button>
-                  </Tooltip>
-                </>
+                <Tooltip label="Resume workflow">
+                  <button
+                    type="button"
+                    onClick={() => void changeStatus("running", "Workflow resumed")}
+                    disabled={isUpdating}
+                    aria-label={`Resume ${workflow.name}`}
+                    className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                  >
+                    <PlayIcon />
+                  </button>
+                </Tooltip>
               ) : null}
-              {workflow.status === "stopped" && parentGoal ? (
-                <Link
-                  to="/app/workflows/new"
-                  search={{ goal: parentGoal.id }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-dark"
-                >
-                  <PlusIcon /> Deploy again
-                </Link>
+              {workflow.status === "completed" ? (
+                <Tooltip label="Re-run workflow">
+                  <button
+                    type="button"
+                    onClick={() => void changeStatus("running", "Workflow restarted")}
+                    disabled={isUpdating}
+                    aria-label={`Re-run ${workflow.name}`}
+                    className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                  >
+                    <ReRunIcon />
+                  </button>
+                </Tooltip>
               ) : null}
             </div>
           </header>
@@ -277,7 +255,7 @@ function WorkflowDetailPage() {
                 <StatusPill status={workflow.status} />
               </p>
               <p className="mt-2 text-xs text-muted">
-                {workflow.status === "running" ? "Actively working" : workflow.status === "paused" ? "On hold" : "Ended"}
+                {workflow.status === "running" ? "Actively working" : workflow.status === "paused" ? "On hold" : "Finished"}
               </p>
             </article>
             <article className="rounded-2xl border border-line bg-white p-5">
@@ -290,7 +268,7 @@ function WorkflowDetailPage() {
                   ? `${startsAtLabel ?? "Now"} → ${endsAtLabel ?? "no end"}`
                   : remaining !== null
                     ? `${remaining} day${remaining === 1 ? "" : "s"} left`
-                    : "Runs until stopped"}
+                    : "Runs until completed"}
               </p>
               {remaining !== null && (startsAtLabel || endsAtLabel) ? (
                 <p className="mt-1 text-xs text-muted">

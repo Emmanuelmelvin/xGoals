@@ -17,6 +17,7 @@ import {
   Pencil,
   Play,
   Plus,
+  RotateCcw,
   Settings,
   Square,
   Trash2,
@@ -54,6 +55,7 @@ export const ClockIcon = withLucideDefaults(Clock, "size-4");
 export const PauseIcon = withLucideDefaults(Pause, "size-4");
 export const PlayIcon = withLucideDefaults(Play, "size-4");
 export const StopIcon = withLucideDefaults(Square, "size-4");
+export const ReRunIcon = withLucideDefaults(RotateCcw, "size-4");
 export const SettingsIcon = withLucideDefaults(Settings, "size-4");
 export const SignOutIcon = withLucideDefaults(LogOut, "size-4");
 export const PanelLeftIcon = withLucideDefaults(PanelLeft, "size-5");

@@ -8,9 +8,9 @@ function pluralize(count: number, singular: string, plural?: string) {
   return count === 1 ? singular : (plural ?? `${singular}s`);
 }
 
-function StatusDot({ tone }: { tone: "running" | "paused" | "stopped" }) {
+function StatusDot({ tone }: { tone: "running" | "paused" | "completed" }) {
   const toneClass =
-    tone === "running" ? "bg-emerald-500" : tone === "paused" ? "bg-amber-500" : "bg-slate-400";
+    tone === "running" ? "bg-emerald-500" : tone === "paused" ? "bg-amber-500" : "bg-blue-500";
   return <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${toneClass}`} />;
 }
 
@@ -31,8 +31,8 @@ export function StatusPill({ status }: { status: DeploymentStatus }) {
       ? "bg-emerald-100 text-emerald-800"
       : status === "paused"
         ? "bg-amber-100 text-amber-800"
-        : "bg-wash text-muted";
-  const label = status === "running" ? "Running" : status === "paused" ? "Paused" : "Stopped";
+        : "bg-blue-100 text-blue-800";
+  const label = status === "running" ? "Running" : status === "paused" ? "Paused" : "Completed";
   return (
     <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold ${styles}`}>
       {label}
@@ -44,7 +44,7 @@ export function WorkflowStatusSummary({ goal }: { goal: Goal }) {
   const items = [
     { key: "running", label: "Running", count: goal.workflows.running },
     { key: "paused", label: "Paused", count: goal.workflows.paused },
-    { key: "stopped", label: "Stopped", count: goal.workflows.stopped },
+    { key: "completed", label: "Completed", count: goal.workflows.completed },
   ] as const;
   return (
     <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
@@ -64,7 +64,7 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
   const rows = [
     { key: "running", label: "Running", detail: "Actively working", count: goal.workflows.running },
     { key: "paused", label: "Paused", detail: "On hold", count: goal.workflows.paused },
-    { key: "stopped", label: "Stopped", detail: "Ended", count: goal.workflows.stopped },
+    { key: "completed", label: "Completed", detail: "Finished", count: goal.workflows.completed },
   ] as const;
 
   return (
@@ -77,7 +77,7 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
         type="button"
         aria-describedby={panelId}
         aria-expanded={open}
-        aria-label={`${goal.workflowCount} ${pluralize(goal.workflowCount, "workflow")} — ${goal.workflows.running} running, ${goal.workflows.paused} paused, ${goal.workflows.stopped} stopped`}
+        aria-label={`${goal.workflowCount} ${pluralize(goal.workflowCount, "workflow")} — ${goal.workflows.running} running, ${goal.workflows.paused} paused, ${goal.workflows.completed} completed`}
         onClick={() => setOpen(!open)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
@@ -101,7 +101,7 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
         </span>
         {goal.workflowCount === 0 ? (
           <span className="mt-2 block text-xs leading-5 text-muted">
-            No workflows yet. Deploy one from this goal to see running, paused, and stopped counts here.
+            No workflows yet. Deploy one from this goal to see running, paused, and completed counts here.
           </span>
         ) : (
           <ul className="mt-3 space-y-2">
