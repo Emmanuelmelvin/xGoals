@@ -29,6 +29,20 @@ export const Route = createFileRoute("/app/credits")({
 
 const QUICK_AMOUNTS = ["5", "10", "25", "50", "100"] as const;
 
+/**
+ * Keep the amount field numeric: digits with a single dot and at most two
+ * decimals, matching what parseUsdToCents accepts. Stray characters ($ ,
+ * spaces, letters) are dropped so pasting "abc25.99" still lands on 25.99.
+ */
+function sanitizeAmountInput(value: string): string {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const dot = cleaned.indexOf(".");
+  const head = dot === -1 ? cleaned : cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
+  const [whole = "", fraction] = head.split(".");
+  const cappedWhole = whole.slice(0, 6);
+  return fraction === undefined ? cappedWhole : `${cappedWhole}.${fraction.slice(0, 2)}`;
+}
+
 function formatLedgerDate(value: string): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -162,7 +176,7 @@ function CreditsPage() {
                 </span>
                 <input
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))}
                   inputMode="decimal"
                   autoComplete="off"
                   placeholder="25.00"

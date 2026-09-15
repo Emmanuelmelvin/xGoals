@@ -41,6 +41,16 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
       return { checkoutUrl: null as string | null, error: "Your account has no email address for the receipt." };
     }
 
+    // Name the Bachs customer with the buyer's X handle, matching how the
+    // workspace identifies them everywhere else.
+    const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const rawHandle =
+      (typeof metadata.user_name === "string" && metadata.user_name) ||
+      (typeof metadata.preferred_username === "string" && metadata.preferred_username) ||
+      (typeof metadata.screen_name === "string" && metadata.screen_name) ||
+      null;
+    const customerName = rawHandle ? `@${rawHandle.replace(/^@/, "")}` : null;
+
     const { data: purchase, error: purchaseError } = await supabase
       .from("credit_purchases")
       .insert({ owner_id: user.id, checkout_id: `pending_${crypto.randomUUID()}`, usd_amount: amount, credits })
@@ -58,7 +68,7 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           pricing: { currency: "USD", amount },
-          customer: { email: user.email },
+          customer: customerName ? { email: user.email, name: customerName } : { email: user.email },
           success_url: `${appUrl}/app/credits`,
           cancel_url: `${appUrl}/app/credits`,
           reference: purchase.id,
