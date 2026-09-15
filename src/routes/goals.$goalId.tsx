@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { VisibilityBadge } from "../components/dashboard/goal-card";
+import { VisibilityBadge, SkillList } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, loadPermissionsForPublicGoal, loadPublicGoal } from "../components/dashboard/goal-persistence";
 import { BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
-import { XGoalMark } from "../components/logo";
+import { PublicHeader } from "../components/public-header";
 import { createClient } from "../lib/supabase/client";
 import type { PublicGoalDetail } from "../components/dashboard/types";
 
@@ -82,35 +82,7 @@ function PublicGoalPage() {
 
   return (
     <section className="min-h-screen bg-paper text-ink">
-      <header className="sticky top-0 z-10 border-b border-line bg-paper">
-        <div className="mx-auto flex min-h-20 w-[calc(100%-2rem)] max-w-6xl items-center justify-between gap-6 sm:w-[calc(100%-4rem)]">
-          <Link to="/" className="flex items-center gap-3" aria-label="xGoal home">
-            <XGoalMark className="size-9 shrink-0" />
-            <span className="font-bold tracking-[-0.04em]">xGoal</span>
-          </Link>
-          <nav className="flex items-center gap-2" aria-label="Public navigation">
-            <Link to="/goals" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink">
-              Explore
-            </Link>
-            {isOwner && goal ? (
-              <Link
-                to="/app/goals/$goalId"
-                params={{ goalId: goal.id }}
-                className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-ink-soft"
-              >
-                Open in workspace
-              </Link>
-            ) : (
-              <Link
-                to="/app"
-                className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-ink-soft"
-              >
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader showExplore />
 
       {isLoading ? (
         <p className="mx-auto max-w-6xl p-5 text-sm text-muted sm:p-8">Loading goal…</p>
@@ -184,7 +156,7 @@ function PublicGoalPage() {
             </div>
             {isOwner ? null : (
               <p className="mt-2 text-xs leading-5 text-muted">
-                Branches and workflows you create stay private in your workspace. Sign-in is required.
+                Branches and workflows you create stay private in your workspace. Sign in is required.
               </p>
             )}
           </header>
@@ -210,6 +182,11 @@ function PublicGoalPage() {
               </article>
 
               <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
+                <h2 className="text-xl font-semibold tracking-[-0.04em]">Skills</h2>
+                <SkillList skills={goal.skills} emptyText="No skills listed for this goal." />
+              </article>
+
+              <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
                 <header className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-semibold tracking-[-0.04em]">Branches</h2>
@@ -219,7 +196,7 @@ function PublicGoalPage() {
                 {goal.branches.length === 0 ? (
                   <p className="mt-5 rounded-2xl bg-wash px-4 py-6 text-center text-sm leading-6 text-muted">
                     {goal.parentGoalId
-                      ? "Only top-level goals can have branches."
+                      ? "Only top level goals can have branches."
                       : "No public branches yet. Branch off to explore a variation."}
                   </p>
                 ) : (

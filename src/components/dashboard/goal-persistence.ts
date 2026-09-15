@@ -1,5 +1,5 @@
 import { createClient } from "../../lib/supabase/client";
-import type { Deployment, DeploymentStatus, Goal, GoalVisibility, Milestone, PublicGoal, PublicGoalBranch, PublicGoalDetail, PublicGoalOwner, RunStatus, WorkflowDefinition, WorkflowRun } from "./types";
+import type { Deployment, DeploymentStatus, Goal, GoalVisibility, Milestone, PublicGoal, PublicGoalBranch, PublicGoalDetail, PublicGoalOwner, RunStatus, Skill, WorkflowDefinition, WorkflowRun } from "./types";
 
 export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
   return value === "running" || value === "paused" || value === "completed";
@@ -45,14 +45,31 @@ function parseStringList(raw: unknown): string[] {
   return raw.filter((item): item is string => typeof item === "string");
 }
 
+export function parseSkillList(raw: unknown): Skill[] {
+  if (!Array.isArray(raw)) return [];
+  const skills: Skill[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const record = entry as Record<string, unknown>;
+    const nameSource = record.name ?? record.title ?? record.label;
+    const name = typeof nameSource === "string" ? nameSource.trim() : "";
+    const bodySource = record.body ?? record.content ?? record.text ?? record.instructions;
+    const body = typeof bodySource === "string" ? bodySource.trim() : "";
+    if (!name || !body) continue;
+    skills.push({ name, body });
+  }
+  return skills;
+}
+
 export function parseWorkflowDefinition(value: unknown): WorkflowDefinition {
   if (typeof value !== "object" || value === null) {
-    return { milestones: [], permissions: [], runLengthDays: null, endsAt: null, startsAt: null };
+    return { milestones: [], skills: [], permissions: [], runLengthDays: null, endsAt: null, startsAt: null };
   }
   const record = value as Record<string, unknown>;
   const runLengthDays = typeof record.run_length_days === "number" && record.run_length_days > 0 ? Math.floor(record.run_length_days) : null;
   return {
     milestones: parseMilestoneList(record.milestones),
+    skills: parseSkillList(record.skills),
     permissions: parseStringList(record.permissions),
     runLengthDays,
     endsAt: typeof record.ends_at === "string" && record.ends_at ? record.ends_at : null,
@@ -111,6 +128,11 @@ export async function loadGoalsForUser(ownerId: string) {
     return parseMilestoneList((plan as { milestones?: unknown }).milestones);
   }
 
+  function getSkills(plan: unknown): Skill[] {
+    if (typeof plan !== "object" || plan === null) return [];
+    return parseSkillList((plan as { skills?: unknown }).skills);
+  }
+
   return {
     goals: (goalRows ?? []).map((goal) => ({
       id: goal.id,
@@ -122,6 +144,7 @@ export async function loadGoalsForUser(ownerId: string) {
       workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, completed: 0 },
       branchCount: branchCounts.get(goal.id) ?? 0,
       milestones: getMilestones(goal.plan),
+      skills: getSkills(goal.plan),
       updatedAt: new Date(goal.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
     })),
     error: null,
@@ -200,11 +223,11 @@ export async function deleteWorkflow({ ownerId, workflowId }: { ownerId: string;
   return { error: null as string | null };
 }
 
-export async function updateGoal({ ownerId, goalId, title, description, milestones, permissions }: { ownerId: string; goalId: string; title: string; description: string; milestones: string[]; permissions: string[] | null }) {
+export async function updateGoal({ ownerId, goalId, title, description, milestones, skills, permissions }: { ownerId: string; goalId: string; title: string; description: string; milestones: string[]; skills: Skill[]; permissions: string[] | null }) {
   const supabase = createClient();
   const { error: goalError } = await supabase
     .from("goals")
-    .update({ title, prompt: description, plan: { version: 1, milestones } })
+    .update({ title, prompt: description, plan: { version: 1, milestones, skills } })
     .eq("id", goalId)
     .eq("owner_id", ownerId);
 
@@ -337,6 +360,7 @@ function toPublicGoal(row: PublicGoalRow, owners: Map<string, PublicGoalOwner | 
     workflows: { running: 0, paused: 0, completed: 0 },
     branchCount,
     milestones: parseMilestoneList((row.plan as { milestones?: unknown } | null)?.milestones),
+    skills: parseSkillList((row.plan as { skills?: unknown } | null)?.skills),
     updatedAt: toShortDate(row.updated_at),
   };
 }
@@ -511,11 +535,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 
 export type GoalCreationMode = "goal" | "deploy";
 
-export async function createGoal({ ownerId, title, description, milestones, permissions, parentGoalId, visibility }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; parentGoalId?: string | null; visibility?: GoalVisibility }) {
+export async function createGoal({ ownerId, title, description, milestones, skills, permissions, parentGoalId, visibility }: { ownerId: string; title: string; description: string; milestones: string[]; skills: Skill[]; permissions: string[]; parentGoalId?: string | null; visibility?: GoalVisibility }) {
   const supabase = createClient();
   const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, parent_goal_id: parentGoalId ?? null, visibility: visibility ?? "private" })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones, skills }, parent_goal_id: parentGoalId ?? null, visibility: visibility ?? "private" })
     .select("id")
     .single();
 
@@ -531,14 +555,14 @@ export async function createGoal({ ownerId, title, description, milestones, perm
   return { id: goal.id as string, error: null as string | null };
 }
 
-export async function createDeployment({ ownerId, goalId, name, milestones, permissions, runLengthDays, endsAt, startsAt }: { ownerId: string; goalId: string; name: string; milestones: string[]; permissions: string[]; runLengthDays?: number | null; endsAt?: string | null; startsAt?: string | null }) {
+export async function createDeployment({ ownerId, goalId, name, milestones, skills, permissions, runLengthDays, endsAt, startsAt }: { ownerId: string; goalId: string; name: string; milestones: string[]; skills: Skill[]; permissions: string[]; runLengthDays?: number | null; endsAt?: string | null; startsAt?: string | null }) {
   const supabase = createClient();
   const { data, error } = await supabase.from("workflows").insert({
     goal_id: goalId,
     owner_id: ownerId,
     name,
     status: "running",
-    definition: { version: 1, milestones, permissions, approval_required: true, run_length_days: runLengthDays ?? null, ends_at: endsAt ?? null, starts_at: startsAt ?? null },
+    definition: { version: 1, milestones, skills, permissions, approval_required: true, run_length_days: runLengthDays ?? null, ends_at: endsAt ?? null, starts_at: startsAt ?? null },
   }).select("id").single();
 
   if (error || !data) return { id: null as string | null, error: error?.message ?? "The workflow could not be created." };

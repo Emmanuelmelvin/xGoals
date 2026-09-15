@@ -189,7 +189,7 @@ function LandingPage() {
           <div className="pointer-events-none absolute -right-8 bottom-10 hidden size-28 animate-[float-reverse_8s_ease-in-out_infinite] rounded-[1.75rem] border border-white/70 bg-blue/15 lg:block" />
           <div className="relative z-10 mx-auto max-w-[62rem]">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-dark sm:text-sm">
-              The goal-driven content workspace
+              The goal driven content workspace
             </p>
             <h1 className="mx-auto mt-6 max-w-[60rem] text-[clamp(3.65rem,8.5vw,7.6rem)] font-semibold leading-[0.91] tracking-[-0.085em] text-ink">
               A clearer way to show up on X.
@@ -270,7 +270,7 @@ function LandingPage() {
                 Your ideas are already there. Give them a direction.
               </h2>
               <p className="mt-6 max-w-[31rem] text-base leading-7 text-white/65">
-                Start with an outcome. Let xGoal help with the follow-through.
+                Start with an outcome. Let xGoal help with the follow through.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

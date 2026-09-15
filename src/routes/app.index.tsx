@@ -27,7 +27,7 @@ function OverviewPage() {
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) { return <article className="rounded-2xl border border-line bg-paper p-5"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-4 text-3xl font-semibold tracking-[-0.06em]">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></article>; }
 function GoalCard({ goal }: { goal: Goal }) {
   return (
-    <li id={`goal-${goal.id}`} className="flex min-h-48 flex-col rounded-2xl border border-line bg-white p-5 transition-colors hover:border-blue sm:p-6">
+    <li id={`goal-${goal.id}`} className={`flex min-h-48 flex-col rounded-2xl border border-line p-5 transition-colors hover:border-blue sm:p-6 goal-card ${goal.visibility === "public" ? "goal-card--public" : "goal-card--private"}`}>
       <header className="flex items-start justify-between gap-4">
         <section className="min-w-0">
           <h3 className="truncate text-lg font-semibold tracking-[-0.04em]">

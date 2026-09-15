@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Tooltip, type TooltipPlacement } from "../tooltip";
 import { BranchIcon, BranchPlusIcon, CheckIcon, ClockIcon, GlobeIcon, LockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
-import type { DeploymentStatus, Goal, GoalVisibility } from "./types";
+import type { DeploymentStatus, Goal, GoalVisibility, Skill } from "./types";
 
 function pluralize(count: number, singular: string, plural?: string) {
   return count === 1 ? singular : (plural ?? `${singular}s`);
@@ -34,6 +34,22 @@ export function VisibilityBadge({ visibility }: { visibility: GoalVisibility }) 
       {isPublic ? <GlobeIcon className="size-3" /> : <LockIcon className="size-3" />}
       {isPublic ? "Public" : "Private"}
     </span>
+  );
+}
+
+export function SkillList({ skills, emptyText }: { skills: Skill[]; emptyText: string }) {
+  if (skills.length === 0) {
+    return <p className="mt-2 text-sm leading-6 text-muted">{emptyText}</p>;
+  }
+  return (
+    <ul className="mt-4 space-y-4">
+      {skills.map((skill, index) => (
+        <li key={`${skill.name}-${index}`}>
+          <p className="text-sm font-semibold text-ink">{skill.name}</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-muted">{skill.body}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -193,7 +209,7 @@ export function GoalCardActions({ goal, onEdit, onDelete, tooltipPlacement = "to
           </button>
         </Tooltip>
       ) : null}
-      <Tooltip label={canBranch ? "Create branch" : "Only top-level goals can branch"} placement={tooltipPlacement}>
+      <Tooltip label={canBranch ? "Create branch" : "Only top level goals can branch"} placement={tooltipPlacement}>
         <button
           type="button"
           onClick={canBranch ? () => void navigate({ to: "/app/goals/branch/$goalId", params: { goalId: goal.id } }) : undefined}

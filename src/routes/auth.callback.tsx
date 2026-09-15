@@ -16,7 +16,7 @@ function AuthCallbackPage() {
     const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/app/";
 
     if (!code) {
-      setError("The X sign-in could not be completed.");
+      setError("The X sign in could not be completed.");
       return;
     }
 
@@ -30,7 +30,7 @@ function AuthCallbackPage() {
         window.location.replace(destination);
       })
       .catch(() => {
-        setError("The X sign-in could not be completed. Please try again.");
+        setError("The X sign in could not be completed. Please try again.");
       });
   }, []);
 
@@ -41,7 +41,7 @@ function AuthCallbackPage() {
           xGoal
         </p>
         <h1 className="mt-5 text-3xl font-semibold tracking-[-0.06em]">
-          {error ? "Sign-in needs another try" : "Finishing your sign-in"}
+          {error ? "Sign in needs another try" : "Finishing your sign in"}
         </h1>
         <p className="mt-4 text-sm leading-6 text-muted">
           {error ?? "Securing your workspace and getting things ready."}

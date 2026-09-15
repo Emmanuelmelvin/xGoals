@@ -4,7 +4,7 @@ import { useDashboard } from "../components/dashboard-layout";
 import { createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "../components/dashboard/icons";
 import { DropdownItem, DropdownPanel, useDropdown } from "../components/dropdown";
-import { MilestoneEditor, PermissionEditor, VisibilityPicker, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
+import { MilestoneEditor, PermissionEditor, SkillsEditor, VisibilityPicker, cleanSkillDrafts, hasPartialSkillDraft, hasSkillContent, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass, type SkillDraft } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
 import type { GoalVisibility } from "../components/dashboard/types";
 
@@ -53,6 +53,7 @@ function NewGoalPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [milestones, setMilestones] = useState<string[]>([""]);
+  const [skills, setSkills] = useState<SkillDraft[]>([]);
   const [granted, setGranted] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<GoalVisibility>("private");
   const [isSaving, setIsSaving] = useState(false);
@@ -66,13 +67,14 @@ function NewGoalPage() {
 
   useEffect(() => {
     if (!editGoal || prefilledEdit || editGoal.parentGoalId) return;
-    if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "")) {
+    if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "") || hasSkillContent(skills)) {
       setPrefilledEdit(true);
       return;
     }
     setTitle(editGoal.title);
     setDescription(editGoal.description ?? "");
     setMilestones(editGoal.milestones.length > 0 ? editGoal.milestones.map((milestone) => milestone.title) : [""]);
+    setSkills(editGoal.skills.map((skill) => ({ name: skill.name, body: skill.body })));
     setPrefilledEdit(true);
     let mounted = true;
     loadGoalPermissions(user.id, editGoal.id).then(({ permissions: loaded, error: loadError }) => {
@@ -118,8 +120,13 @@ function NewGoalPage() {
       toast.error("Finish the details and add at least one milestone before creating the goal.");
       return;
     }
+    if (hasPartialSkillDraft(skills)) {
+      toast.error("Each skill needs a name and content.", { description: "Fill in both, or remove the skill." });
+      return;
+    }
     const cleanTitle = title.trim();
     const cleanDescription = description.trim();
+    const cleanSkills = cleanSkillDrafts(skills);
     if (editGoal) {
       if (editGoal.parentGoalId) {
         toast.error("Branches can't be edited.");
@@ -133,6 +140,7 @@ function NewGoalPage() {
           title: cleanTitle,
           description: cleanDescription,
           milestones: cleanMilestones,
+          skills: cleanSkills,
           permissions: permissionsFailed ? null : granted,
         });
         if (error) {
@@ -157,6 +165,7 @@ function NewGoalPage() {
         title: cleanTitle,
         description: cleanDescription,
         milestones: cleanMilestones,
+        skills: cleanSkills,
         permissions: granted,
         visibility,
       });
@@ -215,7 +224,7 @@ function NewGoalPage() {
           <section className="rounded-3xl border border-dashed border-line bg-wash px-6 py-16 text-center">
             <h1 className="text-xl font-semibold tracking-[-0.04em]">Branches can't be edited</h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-              Only top-level goals can be edited. Create a branch from the original goal to explore a variation instead.
+              Only top level goals can be edited. Create a branch from the original goal to explore a variation instead.
             </p>
             <Link
               to="/app/goals/$goalId"
@@ -291,7 +300,14 @@ function NewGoalPage() {
           ) : null}
 
           {step === 1 ? (
-            <MilestoneEditor milestones={milestones} onChange={setMilestones} />
+            <section className="space-y-6">
+              <MilestoneEditor milestones={milestones} onChange={setMilestones} />
+              <SkillsEditor
+                skills={skills}
+                onChange={setSkills}
+                onError={(message, description) => toast.error(message, { description })}
+              />
+            </section>
           ) : null}
 
           {step === 2 ? (

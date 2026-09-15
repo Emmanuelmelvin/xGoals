@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { StatusPill } from "../components/dashboard/goal-card";
+import { StatusPill, SkillList } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteWorkflow, loadWorkflow, loadWorkflowRuns, updateWorkflowStatus } from "../components/dashboard/goal-persistence";
 import { PauseIcon, PlayIcon, ReRunIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
@@ -233,12 +233,12 @@ function WorkflowDetailPage() {
                 </Tooltip>
               ) : null}
               {workflow.status === "completed" ? (
-                <Tooltip label="Re-run workflow">
+                <Tooltip label="Rerun workflow">
                   <button
                     type="button"
                     onClick={() => void changeStatus("running", "Workflow restarted")}
                     disabled={isUpdating}
-                    aria-label={`Re-run ${workflow.name}`}
+                    aria-label={`Rerun ${workflow.name}`}
                     className="grid size-10 place-items-center rounded-xl bg-blue text-white shadow-sm transition-colors hover:bg-blue-dark disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
                   >
                     <ReRunIcon />
@@ -336,6 +336,14 @@ function WorkflowDetailPage() {
                 ))}
               </ul>
             )}
+          </article>
+
+          <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
+            <h2 className="text-xl font-semibold tracking-[-0.04em]">
+              Skills · {workflow.definition.skills.length}
+            </h2>
+            <SkillList skills={workflow.definition.skills} emptyText="No skills were included in this run." />
+            <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time — editing the goal won't change this run.</p>
           </article>
 
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">

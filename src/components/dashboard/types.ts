@@ -11,6 +11,7 @@ export type WorkflowStatusBreakdown = {
 
 export type WorkflowDefinition = {
   milestones: Milestone[];
+  skills: Skill[];
   permissions: string[];
   runLengthDays: number | null;
   endsAt: string | null;
@@ -32,6 +33,12 @@ export type Milestone = {
   completed: boolean;
 };
 
+/** A named unit of agent know-how: how to act, not what it may touch. */
+export type Skill = {
+  name: string;
+  body: string;
+};
+
 export type Goal = {
   id: string;
   title: string;
@@ -42,6 +49,7 @@ export type Goal = {
   workflows: WorkflowStatusBreakdown;
   branchCount: number;
   milestones: Milestone[];
+  skills: Skill[];
   updatedAt: string;
 };
 

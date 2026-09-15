@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { loadPublicGoals } from "../components/dashboard/goal-persistence";
 import { BranchIcon, MilestoneIcon } from "../components/dashboard/icons";
-import { XGoalMark } from "../components/logo";
+import { PublicHeader } from "../components/public-header";
 import type { PublicGoal } from "../components/dashboard/types";
 
 export const Route = createFileRoute("/goals/")({
@@ -28,7 +28,7 @@ function OwnerLine({ goal }: { goal: PublicGoal }) {
 
 function PublicGoalCard({ goal }: { goal: PublicGoal }) {
   return (
-    <li className="rounded-3xl border border-line bg-white p-6 transition-colors hover:border-blue">
+    <li className="goal-card goal-card--public rounded-3xl border border-line p-6 transition-colors hover:border-blue">
       <h3 className="min-w-0 text-xl font-semibold tracking-[-0.05em]">
         <Link
           to="/goals/$goalId"
@@ -41,7 +41,7 @@ function PublicGoalCard({ goal }: { goal: PublicGoal }) {
       {goal.description ? (
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{goal.description}</p>
       ) : null}
-      <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4 text-xs">
+      <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 text-xs">
         <span className="inline-flex items-center gap-1.5 font-semibold text-muted">
           <MilestoneIcon />
           <span className="tabular-nums">{goal.milestones.length}</span>
@@ -77,22 +77,7 @@ function PublicGoalsPage() {
 
   return (
     <section className="min-h-screen bg-paper text-ink">
-      <header className="sticky top-0 z-10 border-b border-line bg-paper">
-        <div className="mx-auto flex min-h-20 w-[calc(100%-2rem)] max-w-6xl items-center justify-between gap-6 sm:w-[calc(100%-4rem)]">
-          <Link to="/" className="flex items-center gap-3" aria-label="xGoal home">
-            <XGoalMark className="size-9 shrink-0" />
-            <span className="font-bold tracking-[-0.04em]">xGoal</span>
-          </Link>
-          <nav className="flex items-center gap-2" aria-label="Public navigation">
-            <Link
-              to="/app"
-              className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-ink-soft"
-            >
-              Sign in
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <PublicHeader />
 
       <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8">
         <header>

@@ -169,6 +169,7 @@ function NewWorkflowPage() {
         goalId: selectedGoal.id,
         name: cleanName,
         milestones: included,
+        skills: selectedGoal.skills,
         permissions: inheritedPermissions,
         runLengthDays,
         endsAt: isIndefinite || !endsAtDate ? null : endsAtDate.toISOString(),

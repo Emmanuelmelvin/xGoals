@@ -66,7 +66,7 @@ function WorkflowsPage() {
       <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8">
         <header>
           <p className="text-sm font-medium text-blue">Repeatable action</p>
-          <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Workflows are goal-specific.</h2>
+          <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Workflows are goal specific.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Deploy more than one workflow from a goal. Each one can have its own trigger, permissions, and review path.</p>
         </header>
         <section className="rounded-3xl bg-ink p-6 text-white sm:p-8">

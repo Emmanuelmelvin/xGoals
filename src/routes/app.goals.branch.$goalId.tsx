@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass } from "../components/dashboard/goal-form";
+import { MilestoneEditor, PermissionEditor, SkillsEditor, cleanSkillDrafts, hasPartialSkillDraft, hasSkillContent, MILESTONE_MIN_LENGTH, fieldInputClass, type SkillDraft } from "../components/dashboard/goal-form";
 import { createGoal, loadGoalPermissions, loadPermissionsForPublicGoal, loadPublicGoal } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon } from "../components/dashboard/icons";
 import { useToast } from "../components/toast";
@@ -42,22 +42,23 @@ function NewBranchPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [milestones, setMilestones] = useState<string[]>([""]);
+  const [skills, setSkills] = useState<SkillDraft[]>([]);
   const [granted, setGranted] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [inherited, setInherited] = useState(false);
   const [permissionsStatus, setPermissionsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [reloadKey, setReloadKey] = useState(0);
-  const [visibility, setVisibility] = useState<GoalVisibility>("private");
 
   useEffect(() => {
     if (!parent || inherited) return;
-    if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "")) {
+    if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "") || hasSkillContent(skills)) {
       setInherited(true);
       return;
     }
     setTitle(parent.title);
     setDescription(parent.description ?? "");
     setMilestones(parent.milestones.length > 0 ? parent.milestones.map((milestone) => milestone.title) : [""]);
+    setSkills(parent.skills.map((skill) => ({ name: skill.name, body: skill.body })));
     setInherited(true);
   }, [parent, inherited]);
 
@@ -98,6 +99,10 @@ function NewBranchPage() {
       toast.error("Finish the details and add at least one milestone before creating the branch.");
       return;
     }
+    if (hasPartialSkillDraft(skills)) {
+      toast.error("Each skill needs a name and content.", { description: "Fill in both, or remove the skill." });
+      return;
+    }
     setIsSaving(true);
     try {
       const result = await createGoal({
@@ -105,9 +110,10 @@ function NewBranchPage() {
         title: cleanTitle,
         description: cleanDescription,
         milestones: cleanMilestones,
+        skills: cleanSkillDrafts(skills),
         permissions: granted,
         parentGoalId: parent.id,
-        visibility,
+        visibility: "private",
       });
       if (!result.id) {
         toast.error("The branch could not be created.", { description: result.error ?? undefined });
@@ -165,7 +171,7 @@ function NewBranchPage() {
           <section className="rounded-3xl border border-dashed border-line bg-wash px-6 py-16 text-center">
             <h1 className="text-xl font-semibold tracking-[-0.04em]">Branches can't branch further</h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-              Only top-level goals can have branches. Create a branch from the original goal instead.
+              Only top level goals can have branches. Create a branch from the original goal instead.
             </p>
             <Link
               to="/app/goals/$goalId"
@@ -233,11 +239,19 @@ function NewBranchPage() {
               className={`${fieldInputClass} resize-y`}
             />
           </label>
-          <VisibilityPicker value={visibility} onChange={setVisibility} />
+          <p className="text-xs leading-5 text-muted">Branches always stay private — only top-level goals can be public.</p>
         </section>
 
         <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">
           <MilestoneEditor milestones={milestones} onChange={setMilestones} />
+        </section>
+
+        <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">
+          <SkillsEditor
+            skills={skills}
+            onChange={setSkills}
+            onError={(message, description) => toast.error(message, { description })}
+          />
         </section>
 
         <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">

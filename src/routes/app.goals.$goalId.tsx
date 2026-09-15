@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
-import { GoalCardActions, GoalCardMeta, StatusPill, VisibilityBadge, WorkflowStatusSummary } from "../components/dashboard/goal-card";
+import { GoalCardActions, GoalCardMeta, SkillList, StatusPill, VisibilityBadge, WorkflowStatusSummary } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent, updateGoalVisibility } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
 import { SelectDropdown } from "../components/dropdown";
@@ -292,7 +292,7 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
   const parent = goal.parentGoalId ? goals.find((item) => item.id === goal.parentGoalId) : undefined;
 
   async function handleVisibilityChange(next: GoalVisibility) {
-    if (isVisibilitySaving || next === goal.visibility) return;
+    if (isVisibilitySaving || next === goal.visibility || goal.parentGoalId) return;
     setIsVisibilitySaving(true);
     try {
       const { error } = await updateGoalVisibility({ ownerId: user.id, goalId: goal.id, visibility: next });
@@ -337,30 +337,34 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Goal visibility">
           <VisibilityBadge visibility={goal.visibility} />
-          {(["private", "public"] as const).map((option) => {
-            const active = goal.visibility === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => void handleVisibilityChange(option)}
-                disabled={isVisibilitySaving || active}
-                aria-pressed={active}
-                className={
-                  active
-                    ? "rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white"
-                    : "rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
-                }
-              >
-                {option === "private" ? "Private" : "Public"}
-              </button>
-            );
-          })}
+          {goal.parentGoalId ? null : (
+            (["private", "public"] as const).map((option) => {
+              const active = goal.visibility === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => void handleVisibilityChange(option)}
+                  disabled={isVisibilitySaving || active}
+                  aria-pressed={active}
+                  className={
+                    active
+                      ? "rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white"
+                      : "rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                  }
+                >
+                  {option === "private" ? "Private" : "Public"}
+                </button>
+              );
+            })
+          )}
         </div>
         <p className="mt-2 text-xs leading-5 text-muted">
-          {goal.visibility === "public"
-            ? "Anyone can discover this goal and fork it — your workflows stay private."
-            : "Only you can see this goal. Make it public so others can discover and fork it."}
+          {goal.parentGoalId
+            ? "Branches always stay private — only top level goals can be public."
+            : goal.visibility === "public"
+              ? "Anyone can discover this goal and fork it — your workflows stay private."
+              : "Only you can see this goal. Make it public so others can discover and fork it."}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <GoalCardActions goal={goal} onEdit={onEdit} onDelete={onDelete} />
@@ -385,6 +389,11 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
                 ))}
               </ol>
             )}
+          </article>
+
+          <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
+            <h2 className="text-xl font-semibold tracking-[-0.04em]">Skills</h2>
+            <SkillList skills={goal.skills} emptyText="No skills yet. Skills tell the agent specifically how to act." />
           </article>
 
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
@@ -451,7 +460,7 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
             {branches.length === 0 ? (
               <p className="mt-5 rounded-2xl bg-wash px-4 py-6 text-center text-sm leading-6 text-muted">
                 {goal.parentGoalId
-                  ? "Only top-level goals can have branches."
+                  ? "Only top level goals can have branches."
                   : "No branches yet. Branch off to explore a variation without losing this goal."}
               </p>
             ) : (

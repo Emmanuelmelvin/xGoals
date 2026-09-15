@@ -18,17 +18,20 @@ function GoalsPage() {
 
 function GoalCard({ goal }: { goal: Goal }) {
   return (
-    <li id={`goal-${goal.id}`} className="flex min-h-56 flex-col rounded-3xl border border-line bg-white p-6 transition-colors hover:border-blue">
+    <li id={`goal-${goal.id}`} className={`relative flex min-h-56 flex-col rounded-3xl border border-line p-6 transition-colors hover:border-blue goal-card ${goal.visibility === "public" ? "goal-card--public" : "goal-card--private"}`}>
       <header className="flex items-start justify-between gap-4">
         <h3 className="min-w-0 line-clamp-2 text-xl font-semibold tracking-[-0.05em]">
-          <Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg transition-colors hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">{goal.title}</Link>
+          <Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg transition-colors after:absolute after:inset-0 hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">{goal.title}</Link>
         </h3>
-        <span className="flex shrink-0 items-center gap-0.5">
+        <span className="relative z-10 flex shrink-0 items-center gap-0.5">
           <GoalCardActions goal={goal} />
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-pale text-blue"><GoalIcon /></span>
         </span>
       </header>
-      <footer className="mt-auto pt-4"><GoalCardMeta goal={goal} /></footer>
+      {goal.description ? (
+        <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{goal.description}</p>
+      ) : null}
+      <footer className="relative z-10 mt-auto pt-4"><GoalCardMeta goal={goal} /></footer>
     </li>
   );
 }
