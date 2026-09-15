@@ -4,6 +4,7 @@ import { useDashboard } from "../components/dashboard-layout";
 import { createCreditCheckout } from "../lib/bachs/checkout-server-fns";
 import {
   creditsForCents,
+  formatCentsToDisplayUsd,
   formatCentsToUsd,
   getCreditConfig,
   isBachsTestMode,
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/app/credits")({
   component: CreditsPage,
 });
 
-const QUICK_AMOUNTS = ["5.00", "10.00", "25.00", "50.00", "100.00"] as const;
+const QUICK_AMOUNTS = ["5", "10", "25", "50", "100"] as const;
 
 function formatLedgerDate(value: string): string {
   if (!value) return "—";
@@ -45,7 +46,7 @@ function CreditsPage() {
   const [isBalanceLoading, setIsBalanceLoading] = useState(true);
   const [entries, setEntries] = useState<CreditLedgerEntry[]>([]);
   const [openPurchases, setOpenPurchases] = useState<CreditPurchase[]>([]);
-  const [amount, setAmount] = useState("25.00");
+  const [amount, setAmount] = useState("25");
   const [isSaving, setIsSaving] = useState(false);
 
   const config = useMemo(() => getCreditConfig(), []);
@@ -126,7 +127,7 @@ function CreditsPage() {
           <p className="text-sm font-medium text-blue">Usage</p>
           <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Pay for what you use.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-            Enter any dollar amount and get the equivalent credits. ${formatCentsToUsd(100)} buys {config.creditsPerUsd}{" "}
+            Enter any dollar amount and get the equivalent credits. ${formatCentsToDisplayUsd(100)} buys {config.creditsPerUsd}{" "}
             credits — running goals and workflows spends them down.
           </p>
         </header>
@@ -190,7 +191,7 @@ function CreditsPage() {
               {previewCredits !== null && parsed !== null ? (
                 <p className="text-sm leading-6">
                   <span className="font-bold tabular-nums">{previewCredits.toLocaleString()} credits</span>{" "}
-                  <span className="text-muted">for ${formatCentsToUsd(parsed)}</span>
+                  <span className="text-muted">for ${formatCentsToDisplayUsd(parsed)}</span>
                 </p>
               ) : (
                 <p className="text-sm leading-6 text-muted">Enter an amount to see the equivalent credits.</p>
@@ -201,7 +202,7 @@ function CreditsPage() {
                 </p>
               ) : (
                 <p className="mt-1 text-xs leading-5 text-muted">
-                  ${formatCentsToUsd(config.minCents)} minimum · ${formatCentsToUsd(config.maxCents)} maximum · snaps to $0.05
+                  ${formatCentsToDisplayUsd(config.minCents)} minimum · ${formatCentsToDisplayUsd(config.maxCents)} maximum · snaps to $0.05
                   steps so every cent maps to whole credits.
                 </p>
               )}

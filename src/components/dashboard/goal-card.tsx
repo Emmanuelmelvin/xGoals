@@ -156,10 +156,11 @@ export function GoalCardMeta({ goal }: { goal: Goal }) {
 export function GoalCardActions({ goal, onEdit, onDelete, tooltipPlacement = "top" }: { goal: Goal; onEdit?: () => void; onDelete?: () => void; tooltipPlacement?: TooltipPlacement }) {
   const navigate = useNavigate();
   const canBranch = !goal.parentGoalId;
+  const canEdit = !goal.parentGoalId;
 
   return (
     <span className="flex shrink-0 items-center gap-2">
-      {onEdit ? (
+      {onEdit && canEdit ? (
         <Tooltip label="Edit goal" placement={tooltipPlacement}>
           <button
             type="button"
@@ -253,19 +254,20 @@ function MilestoneBreakdown({ goal }: { goal: Goal }) {
           </span>
         ) : (
           <>
-            <ol className="mt-3 space-y-2 pl-6 marker:text-muted list-[lower-roman]">
+            <ul className="mt-3 space-y-2.5">
               {visibleMilestones.map((milestone, index) => (
-                <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-5">
-                  <span className="inline-flex items-center gap-2">
-                    <MilestoneStatusIcon completed={milestone.completed} />
-                    <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                      {milestone.title}
-                    </span>
-                    <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
+                <li key={`${milestone.title}-${index}`} className="flex items-start gap-2.5 text-sm leading-5">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1.5 size-1.5 shrink-0 rounded-full ${milestone.completed ? "bg-emerald-500" : "bg-slate-300"}`}
+                  />
+                  <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
+                    {milestone.title}
                   </span>
+                  <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
                 </li>
               ))}
-            </ol>
+            </ul>
             {hiddenCount > 0 ? (
               <p className="mt-2 text-xs text-muted">+{hiddenCount} more — open the goal to see all</p>
             ) : null}

@@ -157,7 +157,7 @@ function GoalDetailPage() {
   }, [goalId]);
 
   function handleEdit() {
-    if (!goal) return;
+    if (!goal || goal.parentGoalId) return;
     void navigate({ to: "/app/goals/new", search: { edit: goal.id } });
   }
 
@@ -210,21 +210,13 @@ function GoalDetailPage() {
 
   return (
     <section className="min-h-screen bg-paper">
-      <header className="sticky top-0 z-10 flex min-h-20 items-center justify-between gap-6 border-b border-line bg-paper px-5 sm:px-8">
+      <header className="sticky top-0 z-10 flex min-h-20 items-center gap-6 border-b border-line bg-paper px-5 sm:px-8">
         <Link
           to="/app/goals"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
         >
           <ArrowLeftIcon /> Goals
         </Link>
-        {goal ? (
-          <GoalCardActions
-            goal={goal}
-            onEdit={handleEdit}
-            onDelete={() => setDeleteOpen(true)}
-            tooltipPlacement="bottom"
-          />
-        ) : null}
       </header>
       {isGoalsLoading ? (
         <p className="mx-auto max-w-6xl p-5 text-sm text-muted sm:p-8">Loading goal…</p>
@@ -250,7 +242,7 @@ function GoalDetailPage() {
           </section>
         </section>
       ) : (
-        <GoalDetailContent key={goal.id} goal={goal} />
+        <GoalDetailContent key={goal.id} goal={goal} onEdit={isBranch ? undefined : handleEdit} onDelete={() => setDeleteOpen(true)} />
       )}
       {goal && deleteOpen ? (
         <DeleteBranchDialog
@@ -267,7 +259,7 @@ function GoalDetailPage() {
   );
 }
 
-function GoalDetailContent({ goal }: { goal: Goal }) {
+function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: () => void; onDelete: () => void }) {
   const { user, goals } = useDashboard();
   const navigate = useNavigate();
   const [deployments, setDeployments] = useState<Deployment[]>([]);
@@ -317,6 +309,9 @@ function GoalDetailContent({ goal }: { goal: Goal }) {
         ) : null}
         <div className="mt-5">
           <GoalCardMeta goal={goal} />
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <GoalCardActions goal={goal} onEdit={onEdit} onDelete={onDelete} />
         </div>
       </header>
 

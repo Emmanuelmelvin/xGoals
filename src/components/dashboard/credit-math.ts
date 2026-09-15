@@ -62,6 +62,12 @@ export function formatCentsToUsd(cents: number): string {
   return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
 }
 
+/** Display form: whole dollars render without decimals ("5", not "5.00"). */
+export function formatCentsToDisplayUsd(cents: number): string {
+  if (cents % 100 === 0) return String(cents / 100);
+  return formatCentsToUsd(cents);
+}
+
 /** Exact whole credits for nickel-clean cents. Null when it would fractionalize. */
 export function creditsForCents(cents: number, creditsPerUsd: number): number | null {
   if (!Number.isSafeInteger(cents) || cents <= 0) return null;

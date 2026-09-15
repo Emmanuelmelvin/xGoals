@@ -12,5 +12,8 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
+    // Allow the local Cloudflare quick tunnel used for Bachs sandbox testing.
+    // (Leading dot matches any subdomain; tunnel hosts change per run.)
+    allowedHosts: ["localhost", "127.0.0.1", ".trycloudflare.com"],
   },
 });

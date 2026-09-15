@@ -11,8 +11,8 @@ export const Route = createFileRoute("/app/goals/new")({
     drawer: search.drawer === "closed" || search.drawer === "open" ? search.drawer : undefined,
     edit: typeof search.edit === "string" && search.edit ? search.edit : undefined,
   }),
-  head: () => ({
-    meta: [{ title: "xGoal — New goal" }],
+  head: ({ match }) => ({
+    meta: [{ title: match.search.edit ? "xGoal — Edit goal" : "xGoal — New goal" }],
   }),
   component: NewGoalPage,
 });
@@ -60,9 +60,10 @@ function NewGoalPage() {
 
   const editGoal = edit ? goals.find((goal) => goal.id === edit) : undefined;
   const editNotFound = !!edit && !isGoalsLoading && !editGoal;
+  const cannotEditBranch = !!editGoal?.parentGoalId;
 
   useEffect(() => {
-    if (!editGoal || prefilledEdit) return;
+    if (!editGoal || prefilledEdit || editGoal.parentGoalId) return;
     if (title !== "" || description !== "" || granted.length > 0 || milestones.some((milestone) => milestone.trim() !== "")) {
       setPrefilledEdit(true);
       return;
@@ -134,6 +135,10 @@ function NewGoalPage() {
     const cleanTitle = title.trim();
     const cleanDescription = description.trim();
     if (editGoal) {
+      if (editGoal.parentGoalId) {
+        toast.error("Branches can't be edited.");
+        return;
+      }
       setIsSaving(true);
       try {
         const { error } = await updateGoal({
@@ -210,6 +215,29 @@ function NewGoalPage() {
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
             >
               Back to goals
+            </Link>
+          </section>
+        </section>
+      </section>
+    );
+  }
+
+  if (cannotEditBranch && editGoal) {
+    return (
+      <section className="min-h-screen bg-paper">
+        <section className="mx-auto w-full max-w-2xl p-5 sm:p-8">
+          <section className="rounded-3xl border border-dashed border-line bg-wash px-6 py-16 text-center">
+            <h1 className="text-xl font-semibold tracking-[-0.04em]">Branches can't be edited</h1>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
+              Only top-level goals can be edited. Create a branch from the original goal to explore a variation instead.
+            </p>
+            <Link
+              to="/app/goals/$goalId"
+              params={{ goalId: editGoal.id }}
+              search={goalsSearch}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white"
+            >
+              Back to goal
             </Link>
           </section>
         </section>
