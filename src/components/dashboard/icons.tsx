@@ -8,8 +8,10 @@ import {
   CreditCard,
   GitBranch,
   GitBranchPlus,
+  Globe,
   Goal,
   LayoutGrid,
+  Lock,
   LogOut,
   Milestone,
   PanelLeft,
@@ -50,6 +52,8 @@ export const GoalIcon = withLucideDefaults(Goal, "size-5");
 export const WorkflowIcon = withLucideDefaults(Workflow, "size-5");
 export const BranchIcon = withLucideDefaults(GitBranch, "size-4");
 export const BranchPlusIcon = withLucideDefaults(GitBranchPlus, "size-4");
+export const GlobeIcon = withLucideDefaults(Globe, "size-4");
+export const LockIcon = withLucideDefaults(Lock, "size-4");
 export const MilestoneIcon = withLucideDefaults(Milestone, "size-4");
 export const ClockIcon = withLucideDefaults(Clock, "size-4");
 export const PauseIcon = withLucideDefaults(Pause, "size-4");

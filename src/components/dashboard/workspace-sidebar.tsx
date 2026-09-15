@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { XGoalMark } from "../logo";
 import { Tooltip } from "../tooltip";
-import { ChevronRightIcon, CreditIcon, GoalIcon, GridIcon, PanelLeftIcon, PlusIcon, SignOutIcon, WorkflowIcon } from "./icons";
+import { ChevronRightIcon, CreditIcon, GlobeIcon, GoalIcon, GridIcon, PanelLeftIcon, PlusIcon, SignOutIcon, WorkflowIcon } from "./icons";
 import type { DrawerState, UserSummary } from "./types";
 
 function UserAvatar({ user }: { user: UserSummary }) {
@@ -57,6 +57,11 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
           <Tooltip label="Workflows" placement="right">
             <Link to="/app/workflows" search={search} activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
               <WorkflowIcon />
+            </Link>
+          </Tooltip>
+          <Tooltip label="Explore public goals" placement="right">
+            <Link to="/goals" activeProps={{ className: "grid size-11 place-items-center rounded-xl bg-blue text-white" }} inactiveProps={{ className: "grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-wash hover:text-ink" }}>
+              <GlobeIcon />
             </Link>
           </Tooltip>
           <Tooltip label="Credits" placement="right">
@@ -134,6 +139,15 @@ export function WorkspaceSidebar({ user, drawer, drawerOpen, onCreateGoal, onTog
         >
           <CreditIcon />
           <span className="flex-1 whitespace-nowrap">Credits</span>
+        </Link>
+
+        <Link
+          to="/goals"
+          activeProps={{ className: "flex items-center gap-3 rounded-xl bg-blue px-3 py-3 text-sm font-semibold text-white" }}
+          inactiveProps={{ className: "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink" }}
+        >
+          <GlobeIcon />
+          <span className="flex-1 whitespace-nowrap">Explore</span>
         </Link>
       </nav>
 

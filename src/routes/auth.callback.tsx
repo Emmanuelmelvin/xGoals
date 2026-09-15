@@ -10,7 +10,10 @@ function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("code");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const next = params.get("next");
+    const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/app/";
 
     if (!code) {
       setError("The X sign-in could not be completed.");
@@ -24,7 +27,7 @@ function AuthCallbackPage() {
           return;
         }
 
-        window.location.replace("/app/");
+        window.location.replace(destination);
       })
       .catch(() => {
         setError("The X sign-in could not be completed. Please try again.");

@@ -37,11 +37,43 @@ export type Goal = {
   title: string;
   description: string | null;
   parentGoalId: string | null;
+  visibility: GoalVisibility;
   workflowCount: number;
   workflows: WorkflowStatusBreakdown;
   branchCount: number;
   milestones: Milestone[];
   updatedAt: string;
+};
+
+/** Who can discover a goal. Private goals are owner-only; public goals are listed on /goals. */
+export type GoalVisibility = "private" | "public";
+
+export type PublicGoalOwner = {
+  displayName: string | null;
+  handle: string | null;
+  avatarUrl: string | null;
+};
+
+/** A public goal with its owner's public identity. Workflow data stays private. */
+export type PublicGoal = Goal & {
+  ownerId: string;
+  owner: PublicGoalOwner | null;
+};
+
+export type PublicGoalBranch = {
+  id: string;
+  title: string;
+  description: string | null;
+  updatedAt: string;
+  milestoneCount: number;
+  owner: PublicGoalOwner | null;
+};
+
+export type PublicGoalDetail = PublicGoal & {
+  /** Set only when the parent goal is also public. */
+  parent: { id: string; title: string } | null;
+  /** Public branches of this goal, newest first. */
+  branches: PublicGoalBranch[];
 };
 
 export type Deployment = {

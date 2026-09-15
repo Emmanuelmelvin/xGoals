@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { fieldInputClass, PermissionSwitch } from "../components/dashboard/goal-form";
-import { PERMISSION_GROUPS, createDeployment, loadGoalPermissions } from "../components/dashboard/goal-persistence";
+import { PERMISSION_GROUPS, createDeployment, loadGoalPermissions, loadPermissionsForPublicGoal, loadPublicGoal } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon } from "../components/dashboard/icons";
 import { SelectDropdown } from "../components/dropdown";
 import { useToast } from "../components/toast";
+import type { Goal, PublicGoal } from "../components/dashboard/types";
 import { DateTimePicker, addDays, formatDateLong, roundUpToNextHour, startOfDay } from "../components/dashboard/schedule-picker";
 
 export const Route = createFileRoute("/app/workflows/new")({
@@ -44,7 +45,28 @@ function NewWorkflowPage() {
   const [permissionsStatus, setPermissionsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [isSaving, setIsSaving] = useState(false);
 
-  const selectedGoal = goals.find((goal) => goal.id === goalId);
+  const ownGoal = goals.find((goal) => goal.id === goalId);
+  const [publicGoal, setPublicGoal] = useState<{ goalId: string; goal: PublicGoal | null } | null>(null);
+
+  useEffect(() => {
+    if (ownGoal || isGoalsLoading || !goalId || publicGoal?.goalId === goalId) return;
+    let mounted = true;
+    loadPublicGoal(goalId).then(({ goal }) => {
+      if (!mounted) return;
+      setPublicGoal({ goalId, goal });
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [ownGoal, isGoalsLoading, goalId, publicGoal]);
+
+  const selectedGoal: Goal | undefined =
+    ownGoal ?? (publicGoal && publicGoal.goalId === goalId ? publicGoal.goal ?? undefined : undefined);
+
+  const goalOptions = goals.map((goal) => ({ value: goal.id, label: goal.title }));
+  if (selectedGoal && !ownGoal) {
+    goalOptions.push({ value: selectedGoal.id, label: `${selectedGoal.title} · public` });
+  }
 
   useEffect(() => {
     if (!goalParam) return;
@@ -71,7 +93,10 @@ function NewWorkflowPage() {
     }
     setPermissionsStatus("loading");
     let mounted = true;
-    loadGoalPermissions(user.id, selectedGoal.id).then(({ permissions: loaded, error }) => {
+    const loader = ownGoal
+      ? loadGoalPermissions(user.id, selectedGoal.id)
+      : loadPermissionsForPublicGoal(selectedGoal.id);
+    loader.then(({ permissions: loaded, error }) => {
       if (!mounted) return;
       if (error) {
         setPermissionsStatus("error");
@@ -83,7 +108,7 @@ function NewWorkflowPage() {
     return () => {
       mounted = false;
     };
-  }, [selectedGoal, user.id]);
+  }, [selectedGoal, ownGoal, user.id]);
 
   function toggleMilestone(title: string, next: boolean) {
     setScopeTouched(true);
@@ -165,7 +190,7 @@ function NewWorkflowPage() {
     }
   }
 
-  if (!isGoalsLoading && goals.length === 0) {
+  if (!isGoalsLoading && goals.length === 0 && !goalId) {
     return (
       <section className="min-h-screen bg-paper">
         <section className="mx-auto w-full max-w-2xl p-5 sm:p-8">
@@ -221,7 +246,7 @@ function NewWorkflowPage() {
             <SelectDropdown
               ariaLabelledBy="new-workflow-goal-label"
               value={goalId}
-              options={goals.map((goal) => ({ value: goal.id, label: goal.title }))}
+              options={goalOptions}
               onChange={(next) => {
                 setGoalId(next);
                 setNameTouched(false);
@@ -232,6 +257,11 @@ function NewWorkflowPage() {
               triggerClassName="mt-2"
             />
           </div>
+          {selectedGoal && !ownGoal ? (
+            <p className="mt-2 text-xs leading-5 text-muted">
+              Public goal — this run stays private to you.
+            </p>
+          ) : null}
           <label className="block">
             <span className="text-sm font-semibold">Run name</span>
             <input

@@ -4,8 +4,9 @@ import { useDashboard } from "../components/dashboard-layout";
 import { createGoal, loadGoalPermissions, updateGoal, type GoalCreationMode } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "../components/dashboard/icons";
 import { DropdownItem, DropdownPanel, useDropdown } from "../components/dropdown";
-import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
+import { MilestoneEditor, PermissionEditor, VisibilityPicker, MILESTONE_MIN_LENGTH, fieldInputClass as inputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
+import type { GoalVisibility } from "../components/dashboard/types";
 
 export const Route = createFileRoute("/app/goals/new")({
   validateSearch: (search: Record<string, unknown>): { drawer?: "open" | "closed"; edit?: string } => ({
@@ -53,6 +54,7 @@ function NewGoalPage() {
   const [description, setDescription] = useState("");
   const [milestones, setMilestones] = useState<string[]>([""]);
   const [granted, setGranted] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<GoalVisibility>("private");
   const [isSaving, setIsSaving] = useState(false);
   const [prefilledEdit, setPrefilledEdit] = useState(false);
   const [permissionsFailed, setPermissionsFailed] = useState(false);
@@ -156,6 +158,7 @@ function NewGoalPage() {
         description: cleanDescription,
         milestones: cleanMilestones,
         permissions: granted,
+        visibility,
       });
       if (!result.id) {
         const message = result.error ?? "The goal could not be created.";
@@ -283,6 +286,7 @@ function NewGoalPage() {
                   className={`${inputClass} resize-y`}
                 />
               </label>
+              {editGoal ? null : <VisibilityPicker value={visibility} onChange={setVisibility} />}
             </section>
           ) : null}
 

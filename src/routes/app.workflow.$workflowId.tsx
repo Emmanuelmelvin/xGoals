@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
-import { MilestoneStatusIcon, StatusPill } from "../components/dashboard/goal-card";
+import { StatusPill } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteWorkflow, loadWorkflow, loadWorkflowRuns, updateWorkflowStatus } from "../components/dashboard/goal-persistence";
 import { PauseIcon, PlayIcon, ReRunIcon } from "../components/dashboard/icons";
 import { Tooltip } from "../components/tooltip";
@@ -335,27 +335,6 @@ function WorkflowDetailPage() {
                   </li>
                 ))}
               </ul>
-            )}
-          </article>
-
-          <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
-            <h2 className="text-xl font-semibold tracking-[-0.04em]">Milestones in scope</h2>
-            {workflow.definition.milestones.length === 0 ? (
-              <p className="mt-2 text-sm leading-6 text-muted">No milestones were included in this run.</p>
-            ) : (
-              <ol className="mt-5 space-y-2.5 pl-6 marker:text-muted list-[lower-roman]">
-                {workflow.definition.milestones.map((milestone, index) => (
-                  <li key={`${milestone.title}-${index}`} className="pl-1 text-sm leading-6">
-                    <span className="inline-flex items-center gap-2.5">
-                      <MilestoneStatusIcon completed={milestone.completed} />
-                      <span className={milestone.completed ? "text-muted line-through" : "text-ink"}>
-                        {milestone.title}
-                      </span>
-                      <span className="sr-only">{milestone.completed ? "(completed)" : "(not completed)"}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
             )}
           </article>
 

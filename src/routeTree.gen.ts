@@ -17,6 +17,8 @@ import { Route as AppGoalsRouteImport } from './routes/app.goals'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as GoalsIndexRouteImport } from './routes/goals.index'
+import { Route as GoalsGoalIdRouteImport } from './routes/goals.$goalId'
 import { Route as ApiBachsWebhookRouteImport } from './routes/api.bachs.webhook'
 import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
 import { Route as AppGoalsGoalIdRouteImport } from './routes/app.goals.$goalId'
@@ -64,6 +66,16 @@ const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoalsIndexRoute = GoalsIndexRouteImport.update({
+  id: '/goals/',
+  path: '/goals/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoalsGoalIdRoute = GoalsGoalIdRouteImport.update({
+  id: '/goals/$goalId',
+  path: '/goals/$goalId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBachsWebhookRoute = ApiBachsWebhookRouteImport.update({
@@ -115,7 +127,9 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AppProfileRoute
   '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/goals/$goalId': typeof GoalsGoalIdRoute
   '/app/': typeof AppIndexRoute
+  '/goals/': typeof GoalsIndexRoute
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
@@ -130,7 +144,9 @@ export interface FileRoutesByTo {
   '/app/credits': typeof AppCreditsRoute
   '/app/profile': typeof AppProfileRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/goals/$goalId': typeof GoalsGoalIdRoute
   '/app': typeof AppIndexRoute
+  '/goals': typeof GoalsIndexRoute
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
@@ -149,7 +165,9 @@ export interface FileRoutesById {
   '/app/profile': typeof AppProfileRoute
   '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
+  '/goals/$goalId': typeof GoalsGoalIdRoute
   '/app/': typeof AppIndexRoute
+  '/goals/': typeof GoalsIndexRoute
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
@@ -169,7 +187,9 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/workflows'
     | '/auth/callback'
+    | '/goals/$goalId'
     | '/app/'
+    | '/goals/'
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
@@ -184,7 +204,9 @@ export interface FileRouteTypes {
     | '/app/credits'
     | '/app/profile'
     | '/auth/callback'
+    | '/goals/$goalId'
     | '/app'
+    | '/goals'
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
@@ -202,7 +224,9 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/workflows'
     | '/auth/callback'
+    | '/goals/$goalId'
     | '/app/'
+    | '/goals/'
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
@@ -217,6 +241,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
+  GoalsGoalIdRoute: typeof GoalsGoalIdRoute
+  GoalsIndexRoute: typeof GoalsIndexRoute
   ApiBachsWebhookRoute: typeof ApiBachsWebhookRoute
 }
 
@@ -276,6 +302,20 @@ declare module '@tanstack/react-router' {
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/goals/': {
+      id: '/goals/'
+      path: '/goals'
+      fullPath: '/goals/'
+      preLoaderRoute: typeof GoalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/goals/$goalId': {
+      id: '/goals/$goalId'
+      path: '/goals/$goalId'
+      fullPath: '/goals/$goalId'
+      preLoaderRoute: typeof GoalsGoalIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/bachs/webhook': {
@@ -393,6 +433,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
+  GoalsGoalIdRoute: GoalsGoalIdRoute,
+  GoalsIndexRoute: GoalsIndexRoute,
   ApiBachsWebhookRoute: ApiBachsWebhookRoute,
 }
 export const routeTree = rootRouteImport

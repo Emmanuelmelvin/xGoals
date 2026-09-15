@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { MilestoneEditor, PermissionEditor, MILESTONE_MIN_LENGTH, fieldInputClass } from "../components/dashboard/goal-form";
-import { createGoal, loadGoalPermissions } from "../components/dashboard/goal-persistence";
+import { createGoal, loadGoalPermissions, loadPermissionsForPublicGoal, loadPublicGoal } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon } from "../components/dashboard/icons";
 import { useToast } from "../components/toast";
+import type { Goal, PublicGoalDetail } from "../components/dashboard/types";
 
 export const Route = createFileRoute("/app/goals/branch/$goalId")({
   head: () => ({
@@ -18,9 +19,25 @@ function NewBranchPage() {
   const { user, goals, isGoalsLoading, refreshGoals } = useDashboard();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const parent = goals.find((goal) => goal.id === goalId);
-  const notFound = !isGoalsLoading && !parent;
+  const ownParent = goals.find((goal) => goal.id === goalId);
+  const [publicParent, setPublicParent] = useState<{ goalId: string; goal: PublicGoalDetail | null } | null>(null);
+  const parent: Goal | undefined =
+    ownParent ?? (publicParent && publicParent.goalId === goalId ? (publicParent.goal ?? undefined) : undefined);
+  const parentLoading = isGoalsLoading || (!ownParent && publicParent?.goalId !== goalId);
+  const notFound = !parentLoading && !parent;
   const cannotBranch = !!parent?.parentGoalId;
+
+  useEffect(() => {
+    if (ownParent || isGoalsLoading || !goalId || publicParent?.goalId === goalId) return;
+    let mounted = true;
+    loadPublicGoal(goalId).then(({ goal }) => {
+      if (!mounted) return;
+      setPublicParent({ goalId, goal });
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [ownParent, isGoalsLoading, goalId, publicParent]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -30,6 +47,7 @@ function NewBranchPage() {
   const [inherited, setInherited] = useState(false);
   const [permissionsStatus, setPermissionsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const [visibility, setVisibility] = useState<GoalVisibility>("private");
 
   useEffect(() => {
     if (!parent || inherited) return;
@@ -47,7 +65,10 @@ function NewBranchPage() {
     if (!parent) return;
     setPermissionsStatus("loading");
     let mounted = true;
-    loadGoalPermissions(user.id, parent.id).then(({ permissions: loaded, error }) => {
+    const loader = ownParent
+      ? loadGoalPermissions(user.id, parent.id)
+      : loadPermissionsForPublicGoal(parent.id);
+    loader.then(({ permissions: loaded, error }) => {
       if (!mounted) return;
       if (error) {
         toast.error("Parent permissions couldn't be loaded.", { description: error });
@@ -60,7 +81,7 @@ function NewBranchPage() {
     return () => {
       mounted = false;
     };
-  }, [parent, user.id, reloadKey]);
+  }, [parent, ownParent, user.id, reloadKey]);
 
   function togglePermission(permission: string, next: boolean) {
     setGranted(next ? [...granted, permission] : granted.filter((item) => item !== permission));
@@ -86,6 +107,7 @@ function NewBranchPage() {
         milestones: cleanMilestones,
         permissions: granted,
         parentGoalId: parent.id,
+        visibility,
       });
       if (!result.id) {
         toast.error("The branch could not be created.", { description: result.error ?? undefined });
@@ -107,7 +129,7 @@ function NewBranchPage() {
     }
   }
 
-  if (isGoalsLoading && !parent) {
+  if (parentLoading && !parent) {
     return (
       <section className="min-h-screen bg-paper">
         <p className="mx-auto max-w-2xl p-5 text-sm text-muted sm:p-8">Loading parent goal…</p>
@@ -211,6 +233,7 @@ function NewBranchPage() {
               className={`${fieldInputClass} resize-y`}
             />
           </label>
+          <VisibilityPicker value={visibility} onChange={setVisibility} />
         </section>
 
         <section className="rounded-3xl border border-line bg-white p-5 sm:p-6">

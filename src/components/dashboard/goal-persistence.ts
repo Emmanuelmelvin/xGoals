@@ -1,8 +1,12 @@
 import { createClient } from "../../lib/supabase/client";
-import type { Deployment, DeploymentStatus, Goal, Milestone, RunStatus, WorkflowDefinition, WorkflowRun } from "./types";
+import type { Deployment, DeploymentStatus, Goal, GoalVisibility, Milestone, PublicGoal, PublicGoalBranch, PublicGoalDetail, PublicGoalOwner, RunStatus, WorkflowDefinition, WorkflowRun } from "./types";
 
 export function isDeploymentStatus(value: unknown): value is DeploymentStatus {
   return value === "running" || value === "paused" || value === "completed";
+}
+
+export function isGoalVisibility(value: unknown): value is GoalVisibility {
+  return value === "private" || value === "public";
 }
 
 export function isRunStatus(value: unknown): value is RunStatus {
@@ -77,7 +81,7 @@ function toDeployment(row: { id: string; goal_id: string; name: string; status: 
 export async function loadGoalsForUser(ownerId: string) {
   const supabase = createClient();
   const [{ data: goalRows, error: goalsError }, { data: workflowRows, error: workflowsError }] = await Promise.all([
-    supabase.from("goals").select("id,title,updated_at,plan,parent_goal_id,prompt").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
+    supabase.from("goals").select("id,title,updated_at,plan,parent_goal_id,prompt,visibility").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
     supabase.from("workflows").select("goal_id,status").eq("owner_id", ownerId),
   ]);
 
@@ -113,6 +117,7 @@ export async function loadGoalsForUser(ownerId: string) {
       title: goal.title,
       description: typeof goal.prompt === "string" && goal.prompt.trim() ? goal.prompt : null,
       parentGoalId: typeof goal.parent_goal_id === "string" && goal.parent_goal_id ? goal.parent_goal_id : null,
+      visibility: isGoalVisibility(goal.visibility) ? goal.visibility : "private",
       workflowCount: workflowCounts.get(goal.id) ?? 0,
       workflows: workflowBreakdowns.get(goal.id) ?? { running: 0, paused: 0, completed: 0 },
       branchCount: branchCounts.get(goal.id) ?? 0,
@@ -227,6 +232,18 @@ export async function updateGoal({ ownerId, goalId, title, description, mileston
   return { error: null as string | null };
 }
 
+export async function updateGoalVisibility({ ownerId, goalId, visibility }: { ownerId: string; goalId: string; visibility: GoalVisibility }) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("goals")
+    .update({ visibility })
+    .eq("id", goalId)
+    .eq("owner_id", ownerId);
+
+  if (error) return { error: error.message };
+  return { error: null as string | null };
+}
+
 export async function deleteGoal({ ownerId, goalId }: { ownerId: string; goalId: string }) {
   const supabase = createClient();
   const { error } = await supabase.from("goals").delete().eq("id", goalId).eq("owner_id", ownerId);
@@ -262,6 +279,168 @@ export async function loadGoalPermissions(ownerId: string, goalId: string) {
       .map((row) => row.permission)
       .filter((permission): permission is string => typeof permission === "string"),
     error: null,
+  };
+}
+
+type PublicGoalRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  prompt: string | null;
+  parent_goal_id: string | null;
+  visibility: unknown;
+  plan: unknown;
+  updated_at: string;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  x_handle: string | null;
+  avatar_url: string | null;
+};
+
+function toPublicOwner(row: ProfileRow): PublicGoalOwner {
+  return {
+    displayName: typeof row.display_name === "string" && row.display_name ? row.display_name : null,
+    handle: typeof row.x_handle === "string" && row.x_handle ? row.x_handle : null,
+    avatarUrl: typeof row.avatar_url === "string" && row.avatar_url ? row.avatar_url : null,
+  };
+}
+
+async function loadOwners(ownerIds: string[]) {
+  const unique = [...new Set(ownerIds.filter((id) => typeof id === "string" && id))];
+  const owners = new Map<string, PublicGoalOwner | null>();
+  if (unique.length === 0) return owners;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,x_handle,avatar_url")
+    .in("id", unique);
+  if (error) return owners;
+  for (const row of (data ?? []) as ProfileRow[]) {
+    owners.set(row.id, toPublicOwner(row));
+  }
+  return owners;
+}
+
+function toPublicGoal(row: PublicGoalRow, owners: Map<string, PublicGoalOwner | null>, branchCount: number): PublicGoal {
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    owner: owners.get(row.owner_id) ?? null,
+    title: row.title,
+    description: typeof row.prompt === "string" && row.prompt.trim() ? row.prompt : null,
+    parentGoalId: typeof row.parent_goal_id === "string" && row.parent_goal_id ? row.parent_goal_id : null,
+    visibility: isGoalVisibility(row.visibility) ? row.visibility : "private",
+    workflowCount: 0,
+    workflows: { running: 0, paused: 0, completed: 0 },
+    branchCount,
+    milestones: parseMilestoneList((row.plan as { milestones?: unknown } | null)?.milestones),
+    updatedAt: toShortDate(row.updated_at),
+  };
+}
+
+/** Top-level public goals for discovery, newest first. Workflow data stays private. */
+export async function loadPublicGoals() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goals")
+    .select("id,owner_id,title,prompt,parent_goal_id,visibility,plan,updated_at")
+    .eq("visibility", "public")
+    .is("parent_goal_id", null)
+    .order("updated_at", { ascending: false })
+    .limit(100);
+
+  if (error) return { goals: [] as PublicGoal[], error: error.message };
+
+  const rows = (data ?? []) as PublicGoalRow[];
+  const ids = rows.map((row) => row.id);
+  const [owners, branchResult] = await Promise.all([
+    loadOwners(rows.map((row) => row.owner_id)),
+    ids.length > 0
+      ? supabase.from("goals").select("parent_goal_id").in("parent_goal_id", ids).eq("visibility", "public")
+      : Promise.resolve({ data: [] as { parent_goal_id: string | null }[], error: null }),
+  ]);
+  const branchCounts = new Map<string, number>();
+  if (!branchResult.error) {
+    for (const row of branchResult.data ?? []) {
+      if (typeof row.parent_goal_id === "string" && row.parent_goal_id) {
+        branchCounts.set(row.parent_goal_id, (branchCounts.get(row.parent_goal_id) ?? 0) + 1);
+      }
+    }
+  }
+
+  return {
+    goals: rows.map((row) => toPublicGoal(row, owners, branchCounts.get(row.id) ?? 0)),
+    error: null as string | null,
+  };
+}
+
+/** A single public goal with its owner, public parent link, and public branches. */
+export async function loadPublicGoal(goalId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goals")
+    .select("id,owner_id,title,prompt,parent_goal_id,visibility,plan,updated_at")
+    .eq("id", goalId)
+    .eq("visibility", "public")
+    .single();
+
+  if (error || !data) return { goal: null as PublicGoalDetail | null, error: error?.message ?? "Goal not found." };
+
+  const row = data as PublicGoalRow;
+  const [branchResult, parentResult] = await Promise.all([
+    supabase
+      .from("goals")
+      .select("id,owner_id,title,prompt,plan,updated_at")
+      .eq("parent_goal_id", row.id)
+      .eq("visibility", "public")
+      .order("updated_at", { ascending: false }),
+    row.parent_goal_id
+      ? supabase.from("goals").select("id,title,visibility").eq("id", row.parent_goal_id).single()
+      : Promise.resolve({ data: null, error: null as { message: string } | null }),
+  ]);
+
+  const branchRows = (!branchResult.error ? (branchResult.data ?? []) : []) as PublicGoalRow[];
+  const owners = await loadOwners([row.owner_id, ...branchRows.map((branch) => branch.owner_id)]);
+  const parentRow = (!parentResult.error ? parentResult.data : null) as { id: string; title: string; visibility: unknown } | null;
+
+  return {
+    goal: {
+      ...toPublicGoal(row, owners, branchRows.length),
+      parent:
+        parentRow && isGoalVisibility(parentRow.visibility) && parentRow.visibility === "public"
+          ? { id: parentRow.id, title: parentRow.title }
+          : null,
+      branches: branchRows.map((branch): PublicGoalBranch => ({
+        id: branch.id,
+        title: branch.title,
+        description: typeof branch.prompt === "string" && branch.prompt.trim() ? branch.prompt : null,
+        updatedAt: toShortDate(branch.updated_at),
+        milestoneCount: parseMilestoneList((branch.plan as { milestones?: unknown } | null)?.milestones).length,
+        owner: owners.get(branch.owner_id) ?? null,
+      })),
+    } satisfies PublicGoalDetail,
+    error: null as string | null,
+  };
+}
+
+/** Permission scope names of a public goal (RLS restricts this to public goals). */
+export async function loadPermissionsForPublicGoal(goalId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goal_permissions")
+    .select("permission")
+    .eq("goal_id", goalId);
+
+  if (error) return { permissions: [] as string[], error: error.message };
+
+  return {
+    permissions: (data ?? [])
+      .map((row) => row.permission)
+      .filter((permission): permission is string => typeof permission === "string"),
+    error: null as string | null,
   };
 }
 
@@ -332,11 +511,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 
 export type GoalCreationMode = "goal" | "deploy";
 
-export async function createGoal({ ownerId, title, description, milestones, permissions, parentGoalId }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; parentGoalId?: string | null }) {
+export async function createGoal({ ownerId, title, description, milestones, permissions, parentGoalId, visibility }: { ownerId: string; title: string; description: string; milestones: string[]; permissions: string[]; parentGoalId?: string | null; visibility?: GoalVisibility }) {
   const supabase = createClient();
   const { data: goal, error: goalError } = await supabase
     .from("goals")
-    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, parent_goal_id: parentGoalId ?? null })
+    .insert({ owner_id: ownerId, title, prompt: description, plan: { version: 1, milestones }, parent_goal_id: parentGoalId ?? null, visibility: visibility ?? "private" })
     .select("id")
     .single();
 

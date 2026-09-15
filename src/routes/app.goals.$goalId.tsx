@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
-import { GoalCardActions, GoalCardMeta, StatusPill, WorkflowStatusSummary } from "../components/dashboard/goal-card";
-import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent } from "../components/dashboard/goal-persistence";
+import { GoalCardActions, GoalCardMeta, StatusPill, VisibilityBadge, WorkflowStatusSummary } from "../components/dashboard/goal-card";
+import { PERMISSION_GROUPS, deleteGoal, loadDeploymentsForUser, loadGoalPermissions, updateGoalParent, updateGoalVisibility } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon, BranchIcon, BranchPlusIcon, ChevronRightIcon, PlusIcon } from "../components/dashboard/icons";
 import { SelectDropdown } from "../components/dropdown";
 import { fieldInputClass } from "../components/dashboard/goal-form";
 import { useToast } from "../components/toast";
-import type { Deployment } from "../components/dashboard/types";
+import type { Deployment, GoalVisibility } from "../components/dashboard/types";
 
 export const Route = createFileRoute("/app/goals/$goalId")({
   head: () => ({
@@ -261,11 +261,13 @@ function GoalDetailPage() {
 }
 
 function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: () => void; onDelete: () => void }) {
-  const { user, goals } = useDashboard();
+  const { user, goals, refreshGoals } = useDashboard();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [isVisibilitySaving, setIsVisibilitySaving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -289,6 +291,28 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
   const branches = goals.filter((item) => item.parentGoalId === goal.id);
   const parent = goal.parentGoalId ? goals.find((item) => item.id === goal.parentGoalId) : undefined;
 
+  async function handleVisibilityChange(next: GoalVisibility) {
+    if (isVisibilitySaving || next === goal.visibility) return;
+    setIsVisibilitySaving(true);
+    try {
+      const { error } = await updateGoalVisibility({ ownerId: user.id, goalId: goal.id, visibility: next });
+      if (error) {
+        toast.error("Visibility could not be changed.", { description: error });
+        return;
+      }
+      await refreshGoals();
+      toast.success(next === "public" ? "Goal is now public" : "Goal is now private", {
+        description: next === "public" ? "Anyone can discover it on /goals." : "Only you can see it.",
+      });
+    } catch (err) {
+      toast.error("Visibility could not be changed.", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setIsVisibilitySaving(false);
+    }
+  }
+
   return (
     <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8">
       <header>
@@ -311,6 +335,33 @@ function GoalDetailContent({ goal, onEdit, onDelete }: { goal: Goal; onEdit?: ()
         <div className="mt-5">
           <GoalCardMeta goal={goal} />
         </div>
+        <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Goal visibility">
+          <VisibilityBadge visibility={goal.visibility} />
+          {(["private", "public"] as const).map((option) => {
+            const active = goal.visibility === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => void handleVisibilityChange(option)}
+                disabled={isVisibilitySaving || active}
+                aria-pressed={active}
+                className={
+                  active
+                    ? "rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white"
+                    : "rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                }
+              >
+                {option === "private" ? "Private" : "Public"}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-xs leading-5 text-muted">
+          {goal.visibility === "public"
+            ? "Anyone can discover this goal and fork it — your workflows stay private."
+            : "Only you can see this goal. Make it public so others can discover and fork it."}
+        </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <GoalCardActions goal={goal} onEdit={onEdit} onDelete={onDelete} />
         </div>

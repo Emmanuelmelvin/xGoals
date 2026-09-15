@@ -4,7 +4,7 @@ import { createClient } from "../../lib/supabase/client";
 import { XGoalMark } from "../logo";
 import { ArrowUpRightIcon, XIcon } from "./icons";
 
-export function OnboardingPage() {
+export function OnboardingPage({ returnTo }: { returnTo?: string }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +12,11 @@ export function OnboardingPage() {
     setIsSigningIn(true);
     setError(null);
     try {
-      const { error: signInError } = await createClient().auth.signInWithOAuth({ provider: "x", options: { redirectTo: `${window.location.origin}/auth/callback` } });
+      const callback =
+        returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+          ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`
+          : `${window.location.origin}/auth/callback`;
+      const { error: signInError } = await createClient().auth.signInWithOAuth({ provider: "x", options: { redirectTo: callback } });
       if (signInError) { setError(signInError.message); setIsSigningIn(false); }
     } catch { setError("X sign-in is not configured yet. Check your Supabase environment variables."); setIsSigningIn(false); }
   }

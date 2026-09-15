@@ -33,6 +33,7 @@ function getUserSummary(user: User): UserSummary {
 export function DashboardRouteLayout({ drawer, children }: { drawer?: DrawerState; children: ReactNode }) {
   const [user, setUser] = useState<UserSummary | null>(null);
   const [authState, setAuthState] = useState<"loading" | "signed-in" | "signed-out">("loading");
+  const location = useLocation();
 
   useEffect(() => {
     const supabase = createClient();
@@ -51,7 +52,10 @@ export function DashboardRouteLayout({ drawer, children }: { drawer?: DrawerStat
   }, []);
 
   if (authState === "loading") return <main className="grid min-h-screen place-items-center bg-paper text-ink"><p className="text-sm text-muted">Loading your workspace...</p></main>;
-  if (authState === "signed-out" || !user) return <OnboardingPage />;
+  if (authState === "signed-out" || !user) {
+    const returnTo = `${location.pathname}${location.searchStr}${location.hash ?? ""}`;
+    return <OnboardingPage returnTo={returnTo} />;
+  }
   return <DashboardShell user={user} drawer={drawer}>{children}</DashboardShell>;
 }
 

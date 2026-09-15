@@ -1,6 +1,7 @@
 import { Tooltip } from "../tooltip";
 import { PERMISSION_GROUPS } from "./goal-persistence";
-import { PlusIcon, TrashIcon } from "./icons";
+import { GlobeIcon, LockIcon, PlusIcon, TrashIcon } from "./icons";
+import type { GoalVisibility } from "./types";
 
 export const MILESTONE_MIN_LENGTH = 3;
 export const MILESTONE_MAX_LENGTH = 120;
@@ -23,6 +24,54 @@ export function PermissionSwitch({ checked, onChange, label }: { checked: boolea
         aria-hidden="true"
       />
     </button>
+  );
+}
+
+export function VisibilityPicker({ value, onChange }: { value: GoalVisibility; onChange: (next: GoalVisibility) => void }) {
+  const options: { value: GoalVisibility; title: string; description: string; Icon: typeof GlobeIcon }[] = [
+    {
+      value: "private",
+      title: "Private",
+      description: "Only you can see this goal. Branch it or run workflows whenever.",
+      Icon: LockIcon,
+    },
+    {
+      value: "public",
+      title: "Public",
+      description: "Anyone can discover this goal, branch from it, or run a private workflow from it.",
+      Icon: GlobeIcon,
+    },
+  ];
+  return (
+    <section>
+      <p className="text-sm font-semibold">Visibility</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Goal visibility">
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(option.value)}
+              className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${selected ? "border-blue/40 bg-blue-pale/40" : "border-line bg-white hover:border-ink"}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`grid size-9 shrink-0 place-items-center rounded-full ${selected ? "bg-blue text-white" : "bg-wash text-muted"}`}
+              >
+                <option.Icon />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-ink">{option.title}</span>
+                <span className="mt-0.5 block text-xs leading-5 text-muted">{option.description}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

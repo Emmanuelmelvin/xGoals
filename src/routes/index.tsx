@@ -171,6 +171,9 @@ function LandingPage() {
           <span className="text-lg font-bold tracking-[-0.04em]">xGoal</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm font-semibold sm:gap-6" aria-label="Site navigation">
+          <Link to="/goals" className="hidden text-muted transition-colors hover:text-ink sm:inline">
+            Explore goals
+          </Link>
           <Link
             to="/app"
             className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-white shadow-[0_4px_12px_rgba(16,20,28,0.14)] transition-transform hover:-translate-y-0.5"

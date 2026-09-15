@@ -25,4 +25,21 @@ function OverviewPage() {
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) { return <article className="rounded-2xl border border-line bg-paper p-5"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-4 text-3xl font-semibold tracking-[-0.06em]">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></article>; }
-function GoalCard({ goal }: { goal: Goal }) { return <li id={`goal-${goal.id}`} className="rounded-2xl border border-line bg-white p-5 transition-colors hover:border-blue sm:p-6"><header className="flex items-start justify-between gap-4"><section className="min-w-0"><h3 className="truncate text-lg font-semibold tracking-[-0.04em]"><Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg transition-colors hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">{goal.title}</Link></h3></section><span className="flex shrink-0 items-center gap-0.5"><GoalCardActions goal={goal} /><Tooltip label={`Open ${goal.title}`} placement="top"><Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg p-2 text-muted hover:bg-wash hover:text-ink" aria-label={`Open ${goal.title}`}><ChevronRightIcon /></Link></Tooltip></span></header><footer className="mt-5 pt-4"><GoalCardMeta goal={goal} /></footer></li>; }
+function GoalCard({ goal }: { goal: Goal }) {
+  return (
+    <li id={`goal-${goal.id}`} className="flex min-h-48 flex-col rounded-2xl border border-line bg-white p-5 transition-colors hover:border-blue sm:p-6">
+      <header className="flex items-start justify-between gap-4">
+        <section className="min-w-0">
+          <h3 className="truncate text-lg font-semibold tracking-[-0.04em]">
+            <Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg transition-colors hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">{goal.title}</Link>
+          </h3>
+        </section>
+        <span className="flex shrink-0 items-center gap-0.5">
+          <GoalCardActions goal={goal} />
+          <Tooltip label={`Open ${goal.title}`} placement="top"><Link to="/app/goals/$goalId" params={{ goalId: goal.id }} className="rounded-lg p-2 text-muted hover:bg-wash hover:text-ink" aria-label={`Open ${goal.title}`}><ChevronRightIcon /></Link></Tooltip>
+        </span>
+      </header>
+      <footer className="mt-auto pt-4"><GoalCardMeta goal={goal} /></footer>
+    </li>
+  );
+}

@@ -1,8 +1,8 @@
 import { useId, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Tooltip, type TooltipPlacement } from "../tooltip";
-import { BranchIcon, BranchPlusIcon, CheckIcon, ClockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
-import type { DeploymentStatus, Goal } from "./types";
+import { BranchIcon, BranchPlusIcon, CheckIcon, ClockIcon, GlobeIcon, LockIcon, MilestoneIcon, PencilIcon, PlusIcon, TrashIcon, WorkflowIcon } from "./icons";
+import type { DeploymentStatus, Goal, GoalVisibility } from "./types";
 
 function pluralize(count: number, singular: string, plural?: string) {
   return count === 1 ? singular : (plural ?? `${singular}s`);
@@ -23,6 +23,18 @@ export function MilestoneStatusIcon({ completed }: { completed: boolean }) {
     );
   }
   return <span aria-hidden="true" className="size-5 shrink-0 rounded-full border border-line bg-white" />;
+}
+
+export function VisibilityBadge({ visibility }: { visibility: GoalVisibility }) {
+  const isPublic = visibility === "public";
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.65rem] font-bold ${isPublic ? "border-blue/30 bg-blue-pale text-blue-dark" : "border-line bg-wash text-muted"}`}
+    >
+      {isPublic ? <GlobeIcon className="size-3" /> : <LockIcon className="size-3" />}
+      {isPublic ? "Public" : "Private"}
+    </span>
+  );
 }
 
 export function StatusPill({ status }: { status: DeploymentStatus }) {
@@ -125,6 +137,15 @@ function WorkflowBreakdown({ goal }: { goal: Goal }) {
 export function GoalCardMeta({ goal }: { goal: Goal }) {
   return (
     <span className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+      <Tooltip
+        label={goal.visibility === "public" ? "Public goal — anyone can discover it" : "Private goal — only you can see it"}
+        placement="right"
+      >
+        <span className="inline-flex items-center gap-1.5 font-semibold text-muted">
+          {goal.visibility === "public" ? <GlobeIcon /> : <LockIcon />}
+          <span className="sr-only">{goal.visibility === "public" ? "Public" : "Private"}</span>
+        </span>
+      </Tooltip>
       <WorkflowBreakdown goal={goal} />
       <Tooltip label={`${goal.branchCount} ${pluralize(goal.branchCount, "branch", "branches")} in this goal`}>
         <span className="inline-flex items-center gap-1.5 font-semibold text-muted">
