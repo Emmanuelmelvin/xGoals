@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { logger } from "../lib/logger";
+import { env } from "../lib/env";
 
 export const Route = createFileRoute("/api/bachs/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.BACHS_WEBHOOK_SECRET;
+        const secret = env.BACHS_WEBHOOK_SECRET;
         if (!secret) {
-          console.error("[bachs-webhook] BACHS_WEBHOOK_SECRET is not configured.");
+          logger.error("bachs-webhook BACHS_WEBHOOK_SECRET is not configured");
           return json({ error: "Webhook not configured." }, 500);
         }
 
@@ -33,7 +35,7 @@ export const Route = createFileRoute("/api/bachs/webhook")({
         try {
           await handleEvent(event);
         } catch (err) {
-          console.error("[bachs-webhook] Handler failed, will retry.", err);
+          logger.error("bachs-webhook handler failed, will retry", { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined, event_id: event.id, event_type: event.type });
           return json({ error: "Handler failed." }, 500);
         }
         return json({ received: true }, 200);
@@ -105,8 +107,8 @@ function parseEnvelope(envelope: unknown): BachsEvent | null {
 }
 
 function getServiceClient() {
-  const url = process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SECRET_KEY;
+  const url = env.VITE_SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SECRET_KEY;
   if (!url || !serviceKey) throw new Error("Missing Supabase service environment variables.");
   return createServiceClient(url, serviceKey);
 }
@@ -138,12 +140,12 @@ async function fulfillPurchase(event: BachsEvent) {
 
   const checkoutId = typeof event.data.checkout_id === "string" ? event.data.checkout_id : null;
   if (!checkoutId) {
-    console.warn("[bachs-webhook] collection.succeeded without checkout_id.");
+    logger.warn("bachs-webhook collection.succeeded without checkout_id", { event_id: event.id });
     return;
   }
   const { data: purchase } = await supabase.from("credit_purchases").select("id,owner_id,credits,usd_amount,status").eq("checkout_id", checkoutId).single();
   if (!purchase) {
-    console.warn("[bachs-webhook] No purchase for checkout; skipping fulfilment.");
+    logger.warn("bachs-webhook no purchase for checkout; skipping fulfilment", { event_id: event.id, checkout_id: checkoutId });
     return;
   }
   if (purchase.status === "completed") return;
@@ -155,7 +157,8 @@ async function fulfillPurchase(event: BachsEvent) {
   const amount = typeof event.data.amount === "string" ? event.data.amount : null;
   const currency = typeof event.data.currency === "string" ? event.data.currency : null;
   if (amount !== null && currency !== null && !(currency === "USD" && amount === purchase.usd_amount)) {
-    console.warn("[bachs-webhook] Settlement differs from the purchase intent; crediting intent value.", {
+    logger.warn("bachs-webhook settlement differs from purchase intent; crediting intent value", {
+      event_id: event.id,
       settled: `${amount} ${currency}`,
       intent: `${purchase.usd_amount} USD`,
     });

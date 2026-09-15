@@ -1,10 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "../supabase/server";
+import { logger } from "../logger";
+import { env } from "../env";
 
 function getServiceClient() {
-  const url = process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SECRET_KEY;
+  const url = env.VITE_SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SECRET_KEY;
   if (!url || !serviceKey) throw new Error("Missing Supabase service environment variables.");
   return createServiceClient(url, serviceKey);
 }
@@ -35,7 +37,10 @@ export const spendCredits = createServerFn({ method: "POST" })
       .from("credit_ledger")
       .select("amount")
       .eq("owner_id", user.id);
-    if (balanceError) return { error: balanceError.message };
+    if (balanceError) {
+      logger.error("spend balance check failed", { error: balanceError.message, owner_id: user.id });
+      return { error: balanceError.message };
+    }
 
     const balance = (rows ?? []).reduce(
       (total, row) => total + (typeof row.amount === "number" ? row.amount : 0),
@@ -52,6 +57,10 @@ export const spendCredits = createServerFn({ method: "POST" })
       event_id: `spend_${crypto.randomUUID()}`,
       note,
     });
-    if (insertError) return { error: insertError.message };
+    if (insertError) {
+      logger.error("spend ledger insert failed", { error: insertError.message, owner_id: user.id, amount });
+      return { error: insertError.message };
+    }
+    logger.info("spend recorded", { owner_id: user.id, amount, balance_before: balance, balance_after: balance - amount, note });
     return { error: null as string | null, balance: balance - amount };
   });

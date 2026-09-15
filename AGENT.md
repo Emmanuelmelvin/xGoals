@@ -58,6 +58,7 @@ hardening for `SECURITY DEFINER`.
 | `20260915000013_agent_feedback_read.sql` | `SELECT` on comments for the agent (feedback loop) |
 | `20260915000014_atomic_credit_spend.sql` | `try_spend_credits()` — per-owner `pg_advisory_xact_lock` so concurrent spends serialize (no overspend) |
 | `20260915000015_reap_stale_runs.sql` | `reap_stale_runs()` + auto-reap inside `claim_next_run()` (10m timeout), `workflow_runs_status_started_at_idx` |
+| `20260915000016_create_x_tokens_vault.sql` | `x_tokens` per-user X OAuth vault (Vault `vault.secrets`, `set_x_tokens`/`get_x_tokens`/`delete_x_tokens` `SECURITY DEFINER`, `service_role` only) |
 | `20260915000007_create_notifications.sql` | In-app notifications, server-side `read_at` |
 
 ## The `agent_writer` badge
@@ -114,8 +115,14 @@ X's hosted MCP was evaluated and rejected: single-user bridge auth doesn't
 fit a multi-user server, it can't post tweets (our core action), and it
 bypasses per-goal permission scoping. Instead:
 
-- **Login**: Supabase X OAuth; per-user tokens encrypted server-side
-  (Vault/Secrets Manager), refreshed via `offline.access`, never in browser.
+- **Login**: Supabase X OAuth; `auth.callback.tsx` → `exchangeCodeForSession` →
+  `auth-server-fns.ts` persists `provider_token`/`provider_refresh_token` into
+  `x_tokens` via Vault (`vault.create_secret` + `set_x_tokens()` `SECURITY DEFINER`,
+  `20260915000016`). Table is `service_role` only — anon/authenticated have 0 rows,
+  browser never sees tokens. Vault is free-tier eligible
+  (`supabase.com/docs/guides/database/vault`). `offline.access` scope is required
+  (`.env.example:31`). Agent never reads vault directly; dispatcher/publisher
+  fetch via `get_x_tokens(owner_id)` as `service_role` and inject into the run.
 - **Reads**: scoped tools call `api.x.com/2` (search, user lookup) with the
   run owner's token, only for granted scopes.
 - **Writes**: triple-locked — agent writes drafts only → user approves →
@@ -166,4 +173,5 @@ prompt caching, budget alarms, tagged inference profiles.
 - [ ] Dispatcher on EventBridge cadence (local poll loop covers dev; prod adds `reap_stale_runs` pg_cron every minute)
 - [x] `agent_writer` LOGIN provisioning as IaC + Secrets Manager rotation (was manual `ALTER ROLE`; now CDK/Terraform + rotation Lambda, `AGENT.md:54`)
 - [x] Atomic credit spend + stuck-run reaper (`20260915000014`/`15`, `try_spend_credits` advisory lock, `claim_next_run` auto-reap)
-- [ ] Apply migrations `…05`–`…15` to the hosted project
+- [x] X token vault (`20260915000016` Vault `x_tokens`, `set_x_tokens` in `auth-server-fns.ts:1`, service_role only, free-tier Vault)
+- [ ] Apply migrations `…05`–`…16` to the hosted project

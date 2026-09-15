@@ -8,6 +8,8 @@ import {
   quantizeCentsToNickel,
   validatePurchaseCents,
 } from "../../components/dashboard/credit-math";
+import { logger } from "../logger";
+import { env } from "../env";
 
 type BachsCheckoutResponse = {
   checkout_id?: unknown;
@@ -17,10 +19,13 @@ type BachsCheckoutResponse = {
 export const createCreditCheckout = createServerFn({ method: "POST" })
   .validator((data: { usdAmount: string }) => data)
   .handler(async ({ data }) => {
-    const apiKey = process.env.BACHS_API_KEY;
-    const baseUrl = process.env.BACHS_API_BASE_URL ?? "https://sandbox-api.bachs.io";
-    const appUrl = process.env.APP_URL ?? "http://127.0.0.1:3000";
-    if (!apiKey) return { checkoutUrl: null as string | null, error: "Billing is not configured yet." };
+    const apiKey = env.BACHS_API_KEY;
+    const baseUrl = env.BACHS_API_BASE_URL ?? "https://sandbox-api.bachs.io";
+    const appUrl = env.APP_URL ?? "http://127.0.0.1:3000";
+    if (!apiKey) {
+      logger.warn("checkout bachs api key not configured");
+      return { checkoutUrl: null as string | null, error: "Billing is not configured yet." };
+    }
 
     const config = getCreditConfig();
     const parsedCents = parseUsdToCents(data.usdAmount);
@@ -58,8 +63,11 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
       .single();
 
     if (purchaseError || !purchase) {
+      logger.error("checkout purchase insert failed", { error: purchaseError?.message, owner_id: user.id });
       return { checkoutUrl: null as string | null, error: purchaseError?.message ?? "Could not start the purchase." };
     }
+
+    logger.info("checkout purchase created", { purchase_id: purchase.id, owner_id: user.id, amount, credits });
 
     let response: Response;
     try {
@@ -76,12 +84,15 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
           expires_in_minutes: 60,
         }),
       });
-    } catch {
+    } catch (err) {
+      logger.error("checkout bachs fetch failed", { error: err instanceof Error ? err.message : String(err), purchase_id: purchase.id });
       await supabase.from("credit_purchases").update({ status: "failed" }).eq("id", purchase.id);
       return { checkoutUrl: null as string | null, error: "Could not reach the payment provider. Try again." };
     }
 
     if (!response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      logger.warn("checkout bachs non-ok response", { status: response.status, purchase_id: purchase.id, body: bodyText.slice(0, 500) });
       await supabase.from("credit_purchases").update({ status: "failed" }).eq("id", purchase.id);
       return { checkoutUrl: null as string | null, error: "The checkout could not be created. Try again." };
     }
@@ -96,7 +107,9 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
 
     const { error: linkError } = await supabase.from("credit_purchases").update({ checkout_id: checkoutId }).eq("id", purchase.id);
     if (linkError) {
+      logger.error("checkout link failed", { error: linkError.message, purchase_id: purchase.id, checkout_id: checkoutId });
       return { checkoutUrl: null as string | null, error: "The purchase could not be linked. Try again." };
     }
+    logger.info("checkout session created", { purchase_id: purchase.id, checkout_id: checkoutId });
     return { checkoutUrl, error: null as string | null };
   });
