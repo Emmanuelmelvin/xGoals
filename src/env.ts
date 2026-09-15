@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { EnvValidationError } from "./lib/errors.ts";
 
 // Treat "" as undefined so optional empty vars don't fail url() checks
 const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
@@ -181,7 +182,7 @@ function validate(): Env {
     const message = `❌ Invalid environment variables:\n${issues}\n\nFix .env (see .env.example) or set SKIP_ENV_VALIDATION=true to bypass.`;
     // Use console.error before logger is ready
     console.error(message);
-    throw new Error(message);
+    throw new EnvValidationError(message, { cause: result.error });
   }
   parsed = result.data;
   return parsed;

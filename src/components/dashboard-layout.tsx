@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import { ContextError } from "../lib/errors";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/client";
 import { PanelLeftIcon } from "./dashboard/icons";
@@ -15,7 +16,7 @@ const DashboardContext = createContext<DashboardContextValue | null>(null);
 
 export function useDashboard() {
   const context = useContext(DashboardContext);
-  if (!context) throw new Error("useDashboard must be used inside DashboardRouteLayout.");
+  if (!context) throw new ContextError("useDashboard must be used inside DashboardRouteLayout.");
   return context;
 }
 

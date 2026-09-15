@@ -5,13 +5,14 @@ import {
   setResponseHeader,
 } from "@tanstack/react-start/server";
 import { env } from "../env";
+import { ConfigError } from "../errors";
 
 export function createClient() {
   const url = env.VITE_SUPABASE_URL;
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
-    throw new Error("Missing Supabase server environment variables.");
+    throw new ConfigError("Missing Supabase server environment variables.");
   }
 
   return createServerClient(url, publishableKey, {

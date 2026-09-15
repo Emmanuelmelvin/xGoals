@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { logger } from "../lib/logger";
 import { env } from "../lib/env";
+import { ConfigError } from "../lib/errors";
 
 export const Route = createFileRoute("/api/bachs/webhook")({
   server: {
@@ -109,7 +110,7 @@ function parseEnvelope(envelope: unknown): BachsEvent | null {
 function getServiceClient() {
   const url = env.VITE_SUPABASE_URL;
   const serviceKey = env.SUPABASE_SECRET_KEY;
-  if (!url || !serviceKey) throw new Error("Missing Supabase service environment variables.");
+  if (!url || !serviceKey) throw new ConfigError("Missing Supabase service environment variables.");
   return createServiceClient(url, serviceKey);
 }
 

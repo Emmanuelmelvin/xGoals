@@ -1,6 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { env } from "../env";
+import { ConfigError } from "../errors";
 
 let browserClient: SupabaseClient | undefined;
 
@@ -13,7 +14,7 @@ export function createClient() {
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
-    throw new Error("Missing Supabase browser environment variables.");
+    throw new ConfigError("Missing Supabase browser environment variables.");
   }
 
   browserClient = createBrowserClient(url, publishableKey);

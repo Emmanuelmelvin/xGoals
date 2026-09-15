@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from "lucide-react";
+import { ContextError } from "../lib/errors";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -126,6 +127,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToast() {
   const context = useContext(ToastContext);
-  if (!context) throw new Error("useToast must be used inside ToastProvider.");
+  if (!context) throw new ContextError("useToast must be used inside ToastProvider.");
   return context;
 }
