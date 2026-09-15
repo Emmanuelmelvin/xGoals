@@ -61,16 +61,25 @@ async def _poll_loop() -> None:
     # work get picked up without manual POSTs. Empty ticks cost nothing
     # (no claim = no spend). Manual POST /invocations still works — the
     # atomic claim means a poll tick and a manual call can never double-run.
+    # Stale runs are auto-reaped inside claim_next_run, but we also reap on
+    # empty ticks for observability and to surface counts in logs.
     interval = float(os.getenv("AGENT_POLL_INTERVAL_SEC", "60"))
+    empty_ticks = 0
     while True:
         try:
-            from agent.dispatcher import claim_next
+            from agent.dispatcher import claim_next, reap_stale
             from agent.runner import execute_run
 
             job, _envelope = await asyncio.to_thread(claim_next, None)
             if job is not None:
+                empty_ticks = 0
                 result = await asyncio.to_thread(execute_run, job)
                 logger.info("poll_run finished status=%s run=%s", result.get("status"), job.run_id)
+            else:
+                empty_ticks += 1
+                # Every ~10 empty ticks (10m at 60s interval) log a reap check
+                if empty_ticks % 10 == 0:
+                    await asyncio.to_thread(reap_stale, "10 minutes")
         except Exception:
             logger.exception("poll_tick_failed")
         await asyncio.sleep(max(interval, 5))
@@ -129,7 +138,7 @@ class InvocationRequest(BaseModel):
 @app.post("/invocations")
 def invoke(request: InvocationRequest) -> dict:
     # v1: claim one due run, execute the deterministic placeholder flow.
-    # The real brain (Strands agent over the 6 tools) slots in here next.
+    # The real brain (Strands agent over the 7 tools) slots in here next.
     from agent.dispatcher import claim_next
     from agent.runner import execute_run
 

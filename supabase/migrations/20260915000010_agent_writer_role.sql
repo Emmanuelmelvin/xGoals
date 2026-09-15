@@ -1,12 +1,17 @@
--- agent_writer: the agent loop's ID badge. Least privilege, exactly 5 tables.
+-- agent_writer: the agent loop's ID badge. Least privilege, exactly 5 tables
+-- (+ EXECUTE on try_spend_credits / reap_stale_runs / claim_next_run).
 --
--- HOW THE AGENT CONNECTS
---   This role is NOLOGIN. At deploy time, ops run once:
---     ALTER ROLE agent_writer WITH LOGIN PASSWORD '<from-secrets-manager>';
---   The password lives in Secrets Manager; the agent connects direct-Postgres
---   (psycopg) as agent_writer. The Supabase service key stays break-glass
---   admin only and never enters the agent loop. Service connections may also
---   `SET ROLE agent_writer` (granted below) for local testing.
+-- HOW THE AGENT CONNECTS (IaC, not manual)
+--   This role is NOLOGIN in SQL. Login is enabled by infrastructure code
+--   (CDK/Terraform): a Secrets Manager secret `agent_writer/password` with a
+--   30-day rotation Lambda that does both UpdateSecret and
+--   ALTER ROLE agent_writer WITH PASSWORD '<new>' atomically. The IaC (not a
+--   hand-run psql) declares the secret, rotation schedule, and execution-role
+--   permissions; `cdk deploy` / `terraform apply` wires it. The agent connects
+--   direct-Postgres (psycopg) as agent_writer via AGENT_DATABASE_URL from the
+--   secret. The Supabase service key stays break-glass admin only and never
+--   enters the agent loop. Service connections may also `SET ROLE agent_writer`
+--   (granted below) for local testing without a password.
 --
 -- WHAT IT CAN TOUCH (and nothing else)
 --   drafts         SELECT, INSERT, UPDATE (status, error_message)

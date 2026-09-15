@@ -1,7 +1,8 @@
-"""The 6 narrow tools: the ONLY way the model touches Supabase or spends.
+"""The 7 narrow tools: the ONLY way the model touches Supabase or spends.
 
 Every tool runs as the `agent_writer` database role (least privilege, exactly
-5 tables — see supabase/migrations/20260915000010_agent_writer_role.sql) over
+5 tables + EXECUTE on try_spend_credits/reap_stale_runs/claim_next_run
+— see supabase/migrations/20260915000010_agent_writer_role.sql) over
 a direct-Postgres connection. The model never sees credentials, connection
 strings, or SQL.
 
@@ -103,7 +104,7 @@ def _clean_handle(raw: str) -> str:
 
 
 def build_tools(job: JobContext) -> list:
-    """Create the 6 tools bound to one trusted job. The model gets these and nothing else."""
+    """Create the 7 tools bound to one trusted job. The model gets these and nothing else."""
 
     @tool
     def load_job_context() -> dict:
@@ -277,23 +278,41 @@ def build_tools(job: JobContext) -> list:
         if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
             raise ValueError("amount must be a positive whole number of credits.")
         note = (note or "").strip()[:MAX_NOTE_CHARS]
+        event_id = f"spend_{uuid.uuid4().hex}"
 
+        # Atomic per-owner spend via try_spend_credits (pg_advisory_xact_lock).
+        # Concurrent runs for the same owner serialize; different owners run
+        # in parallel. Insufficient funds raises from Postgres -> ValueError.
         with _connect() as conn, conn.cursor() as cur:
-            cur.execute(
-                "select coalesce(sum(amount), 0) as balance from public.credit_ledger where owner_id = %s",
-                (job.owner_id,),
-            )
-            balance = int((cur.fetchone() or {}).get("balance", 0) or 0)
-            if balance < amount:
-                raise ValueError(f"Insufficient credits (balance {balance}, need {amount}). Stop and send a credits_low notification.")
-            event_id = f"spend_{uuid.uuid4().hex}"
-            cur.execute(
-                "insert into public.credit_ledger (owner_id, amount, kind, event_id, note) values (%s, %s, 'spend', %s, %s)",
-                (job.owner_id, -amount, event_id, note or None),
-            )
-            conn.commit()
-        logger.info("credit_spent amount=%s owner=%s", amount, job.owner_id)
-        return {"spent": amount, "balance": balance - amount}
+            try:
+                cur.execute(
+                    "select public.try_spend_credits(%s::uuid, %s::int, %s::text, %s::text) as result",
+                    (job.owner_id, amount, event_id, note or None),
+                )
+                row = cur.fetchone() or {}
+                result = row.get("result") or {}
+                # result is jsonb: {spent, balance, previous_balance}
+                if isinstance(result, str):
+                    import json as _json
+
+                    result = _json.loads(result)
+                conn.commit()
+            except Exception as exc:  # psycopg.errors.RaiseException for insufficient funds
+                conn.rollback()
+                msg = str(exc)
+                # Unwrap Postgres RAISE to a clean retryable message
+                if "Insufficient credits" in msg:
+                    # Extract "Insufficient credits (balance X, need Y)"
+                    import re as _re
+
+                    m = _re.search(r"Insufficient credits.*", msg)
+                    clean = m.group(0) if m else msg
+                    raise ValueError(f"{clean}. Stop and send a credits_low notification.") from None
+                raise ValueError(str(exc)) from None
+        spent = int(result.get("spent", amount))
+        balance = int(result.get("balance", 0))
+        logger.info("credit_spent amount=%s owner=%s balance=%s", spent, job.owner_id, balance)
+        return {"spent": spent, "balance": balance}
 
     @tool
     def read_feedback(limit: int = 10) -> dict:

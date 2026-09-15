@@ -38,6 +38,22 @@ def _connect():
     return psycopg.connect(_db_url(), row_factory=dict_row)
 
 
+def reap_stale(timeout: str = "10 minutes") -> int:
+    """Best-effort reap of stuck runs. Returns count reaped. Never raises."""
+    try:
+        with _connect() as conn, conn.cursor() as cur:
+            cur.execute("select public.reap_stale_runs(%s::interval) as n", (timeout,))
+            row = cur.fetchone() or {}
+            conn.commit()
+            n = int(row.get("n") or 0)
+            if n:
+                logger.info("reaped_stale_runs count=%s timeout=%s", n, timeout)
+            return n
+    except Exception:
+        logger.exception("reap_stale_failed")
+        return 0
+
+
 def claim_next(workflow_id: str | None = None):
     """Claim the oldest due run (or one specific workflow). Returns (job, envelope) or (None, None)."""
     with _connect() as conn, conn.cursor() as cur:

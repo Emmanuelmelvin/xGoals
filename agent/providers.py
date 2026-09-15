@@ -124,3 +124,66 @@ def build_model() -> Any:
 def provider_status() -> dict[str, str]:
     provider = get_provider_name()
     return {"provider": provider, "model": get_model_name(provider)}
+
+
+# --- Retry helpers for Bedrock / OpenAI throttling -----------------------
+# The placeholder runner does not yet call the model, but the real brain
+# (Strands agent) will. Callers should wrap model invocations with
+# `retry_with_backoff` to handle transient 429 / ThrottlingException.
+RETRYABLE_SUBSTRINGS = (
+    "ThrottlingException",
+    "TooManyRequestsException",
+    "ServiceUnavailable",
+    "ModelTimeoutException",
+    "429",
+    "rate limit",
+    "throttl",
+)
+
+
+def is_retryable_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(s.lower() in msg for s in RETRYABLE_SUBSTRINGS)
+
+
+def retry_with_backoff(
+    fn,
+    *,
+    max_attempts: int = 4,
+    base_delay: float = 1.0,
+    max_delay: float = 30.0,
+    jitter: bool = True,
+):
+    """Call `fn()` with exponential backoff on retryable errors.
+
+    Usage:
+        result = retry_with_backoff(lambda: agent("draft a post ..."))
+    """
+    import random
+    import time
+
+    last_exc: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return fn()
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if not is_retryable_error(exc) or attempt == max_attempts:
+                raise
+            delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+            if jitter:
+                delay = delay * (0.5 + random.random() * 0.5)
+            # Honor Retry-After / x-rate-limit-reset if present in message
+            # (Bedrock and OpenAI surface it in the exception string).
+            logger.warning(
+                "retryable provider error attempt=%s/%s delay=%.1fs error=%s",
+                attempt,
+                max_attempts,
+                delay,
+                exc,
+            )
+            time.sleep(delay)
+    # Should be unreachable, but mypy needs a raise
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError("retry_with_backoff: no attempts made")
