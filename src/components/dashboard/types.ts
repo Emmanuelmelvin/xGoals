@@ -102,6 +102,18 @@ export type UserSummary = {
   profileUrl: string;
 };
 
+export type NotificationKind = "draft_ready" | "run_succeeded" | "run_failed" | "milestone" | "credits_low" | "workflow_completed" | "info";
+
+export type NotificationItem = {
+  id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
 export type DashboardContextValue = {
   user: UserSummary;
   goals: Goal[];

@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ArrowUpRight,
+  Bell,
   Check,
   ChevronDown,
   ChevronRight,
@@ -39,6 +40,7 @@ function withLucideDefaults(Component: typeof Plus, defaultClassName: string) {
 }
 
 export const ArrowUpRightIcon = withLucideDefaults(ArrowUpRight, "size-4");
+export const BellIcon = withLucideDefaults(Bell, "size-4");
 export const ArrowLeftIcon = withLucideDefaults(ArrowLeft, "size-4");
 export const CheckIcon = withLucideDefaults(Check, "size-4");
 export const ChevronDownIcon = withLucideDefaults(ChevronDown, "size-4");

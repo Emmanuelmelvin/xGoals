@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useDashboard, type Goal } from "../components/dashboard-layout";
 import { GoalCardActions, GoalCardMeta } from "../components/dashboard/goal-card";
 import { ChevronRightIcon, GoalIcon, PlusIcon } from "../components/dashboard/icons";
+import { NotificationBell } from "../components/dashboard/notification-bell";
 import { Tooltip } from "../components/tooltip";
 
 export const Route = createFileRoute("/app/")({
@@ -12,10 +13,10 @@ export const Route = createFileRoute("/app/")({
 });
 
 function OverviewPage() {
-  const { goals, openCreateGoal } = useDashboard();
+  const { user, goals, openCreateGoal } = useDashboard();
 
   return <section className="min-h-screen bg-paper">
-    <header className="sticky top-0 z-10 flex min-h-20 items-center justify-between gap-6 border-b border-line bg-paper px-5 sm:px-8"><section><p className="text-xs font-semibold text-muted">Workspace</p><h1 className="mt-1 text-xl font-semibold tracking-[-0.04em]">Overview</h1></section><button type="button" onClick={openCreateGoal} className="inline-flex items-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:-translate-y-0.5"><PlusIcon />New goal</button></header>
+    <header className="sticky top-0 z-10 flex min-h-20 items-center justify-between gap-6 border-b border-line bg-paper px-5 sm:px-8"><section><p className="text-xs font-semibold text-muted">Workspace</p><h1 className="mt-1 text-xl font-semibold tracking-[-0.04em]">Overview</h1></section><NotificationBell ownerId={user.id} /></header>
     <section className="mx-auto max-w-6xl space-y-8 p-5 sm:p-8" aria-label="Dashboard content">
       <header><p className="text-sm font-medium text-blue">Your operating system for showing up</p><h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Your workspace is ready.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Goals give your work direction. Workflows turn that direction into repeatable action.</p></header>
       <section className="grid gap-4 sm:grid-cols-3" aria-label="Workspace summary"><Metric label="Goals" value={String(goals.length)} detail="Outcomes you are pursuing" /><Metric label="Workflows" value={String(goals.reduce((total, goal) => total + goal.workflowCount, 0))} detail="Ready to deploy" /><Metric label="Permissions" value="0" detail="Review when you create a goal" /></section>

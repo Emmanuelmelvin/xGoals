@@ -62,7 +62,22 @@ export function DashboardRouteLayout({ drawer, children }: { drawer?: DrawerStat
 function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?: DrawerState; children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const drawerOpen = drawer !== "closed";
+  // No ?drawer param means "auto": open rail on desktop, closed overlay on
+  // mobile. Explicit ?drawer=open/closed wins on every viewport.
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023.5px)").matches,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const query = window.matchMedia("(max-width: 1023.5px)");
+    setIsMobile(query.matches);
+    function onChange(event: MediaQueryListEvent) {
+      setIsMobile(event.matches);
+    }
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  const drawerOpen = drawer !== undefined ? drawer === "open" : !isMobile;
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isGoalsLoading, setIsGoalsLoading] = useState(true);
   const [goalError, setGoalError] = useState<string | null>(null);
@@ -98,8 +113,7 @@ function DashboardShell({ user, drawer, children }: { user: UserSummary; drawer?
   const initialPathRef = useRef(location.pathname);
   useEffect(() => {
     if (location.pathname === initialPathRef.current) return;
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia("(max-width: 1023.5px)").matches) return;
+    if (!isMobile) return;
     if (!drawerOpen) return;
     const nextSearch = new URLSearchParams(location.searchStr);
     nextSearch.set("drawer", "closed");
