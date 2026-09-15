@@ -302,12 +302,12 @@ function WorkflowDetailPage() {
                 {runMilestones.length === 0
                   ? "No milestones in this run"
                   : nextMilestone ? (
-                      <>
-                        Next: <span className="font-semibold text-ink">{nextMilestone.title}</span>
-                      </>
-                    ) : (
-                      "All milestones done"
-                    )}
+                    <>
+                      Next: <span className="font-semibold text-ink">{nextMilestone.title}</span>
+                    </>
+                  ) : (
+                    "All milestones done"
+                  )}
               </p>
               <p className="mt-1 text-xs text-muted">Frozen at deploy time</p>
             </article>
@@ -343,7 +343,7 @@ function WorkflowDetailPage() {
               Skills · {workflow.definition.skills.length}
             </h2>
             <SkillList skills={workflow.definition.skills} emptyText="No skills were included in this run." />
-            <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time — editing the goal won't change this run.</p>
+            <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time editing the goal won't change this run.</p>
           </article>
 
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
@@ -365,7 +365,7 @@ function WorkflowDetailPage() {
                 ))}
               </ul>
             )}
-            <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time — editing the goal won't change this run.</p>
+            <p className="mt-4 text-xs leading-5 text-muted">Frozen at deploy time editing the goal won't change this run.</p>
           </article>
 
           <article className="rounded-3xl border border-red-200 bg-white p-6 sm:p-7">

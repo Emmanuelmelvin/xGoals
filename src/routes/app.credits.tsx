@@ -142,7 +142,7 @@ function CreditsPage() {
           <h2 className="mt-2 text-4xl font-semibold tracking-[-0.07em]">Pay for what you use.</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
             Enter any dollar amount and get the equivalent credits. ${formatCentsToDisplayUsd(100)} buys {config.creditsPerUsd}{" "}
-            credits — running goals and workflows spends them down.
+            credits running goals and workflows spends them down.
           </p>
         </header>
 
@@ -166,7 +166,7 @@ function CreditsPage() {
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
             <h2 className="text-xl font-semibold tracking-[-0.04em]">Buy credits</h2>
-            <p className="mt-1 text-sm text-muted">You choose the dollar amount — credits land right after payment.</p>
+            <p className="mt-1 text-sm text-muted">You choose the dollar amount and the credits land right after payment.</p>
 
             <label className="mt-5 block">
               <span className="text-sm font-semibold">Amount (USD)</span>
@@ -271,7 +271,7 @@ function CreditsPage() {
                 No credit activity yet. Your purchases will show up here.
               </p>
             ) : (
-              <ul className="mt-5 divide-y divide-line border-y border-line">
+              <ul className="mt-5 divide-y divide-line">
                 {entries.map((entry) => (
                   <li key={entry.id} className="flex items-center gap-3 py-3.5 text-sm">
                     <span

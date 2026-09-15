@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { creditsForCents, getCreditConfig, parseUsdToCents } from "../components/dashboard/credit-math";
 
 export const Route = createFileRoute("/api/bachs/webhook")({
   server: {
@@ -142,37 +141,33 @@ async function fulfillPurchase(event: BachsEvent) {
     console.warn("[bachs-webhook] collection.succeeded without checkout_id.");
     return;
   }
-  const { data: purchase } = await supabase.from("credit_purchases").select("id,owner_id,credits,status").eq("checkout_id", checkoutId).single();
+  const { data: purchase } = await supabase.from("credit_purchases").select("id,owner_id,credits,usd_amount,status").eq("checkout_id", checkoutId).single();
   if (!purchase) {
     console.warn("[bachs-webhook] No purchase for checkout; skipping fulfilment.");
     return;
   }
   if (purchase.status === "completed") return;
 
-  const config = getCreditConfig();
+  // The purchase intent is authoritative: the checkout total was fixed in USD
+  // at session creation, so a succeeded collection for this checkout fulfils
+  // exactly the agreed credits — regardless of which currency the buyer paid
+  // in. (Underpayment arrives as collection.underpaid, never as succeeded.)
   const amount = typeof event.data.amount === "string" ? event.data.amount : null;
   const currency = typeof event.data.currency === "string" ? event.data.currency : null;
-  if (currency !== "USD" || amount === null) {
-    console.warn("[bachs-webhook] Unexpected settlement currency; skipping fulfilment.");
-    return;
-  }
-  const cents = parseUsdToCents(amount);
-  const credits = cents === null ? null : creditsForCents(cents, config.creditsPerUsd);
-  if (credits === null) {
-    console.warn("[bachs-webhook] Settlement amount can't map to whole credits; skipping fulfilment.");
-    return;
-  }
-  if (credits !== purchase.credits) {
-    console.warn("[bachs-webhook] Settled credits differ from the purchase intent; crediting settled value.");
+  if (amount !== null && currency !== null && !(currency === "USD" && amount === purchase.usd_amount)) {
+    console.warn("[bachs-webhook] Settlement differs from the purchase intent; crediting intent value.", {
+      settled: `${amount} ${currency}`,
+      intent: `${purchase.usd_amount} USD`,
+    });
   }
 
   const { error: ledgerError } = await supabase.from("credit_ledger").insert({
     owner_id: purchase.owner_id,
-    amount: credits,
+    amount: purchase.credits,
     kind: "purchase",
     checkout_id: checkoutId,
     event_id: event.id,
-    usd_amount: amount,
+    usd_amount: purchase.usd_amount,
   });
   if (ledgerError) {
     // A parallel delivery already credited this event — still ensure the purchase reads completed.

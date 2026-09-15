@@ -94,6 +94,9 @@ export const createCreditCheckout = createServerFn({ method: "POST" })
       return { checkoutUrl: null as string | null, error: "The checkout response was unexpected. Try again." };
     }
 
-    await supabase.from("credit_purchases").update({ checkout_id: checkoutId }).eq("id", purchase.id);
+    const { error: linkError } = await supabase.from("credit_purchases").update({ checkout_id: checkoutId }).eq("id", purchase.id);
+    if (linkError) {
+      return { checkoutUrl: null as string | null, error: "The purchase could not be linked. Try again." };
+    }
     return { checkoutUrl, error: null as string | null };
   });
