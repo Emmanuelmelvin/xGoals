@@ -4,6 +4,7 @@ import sys
 import time
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from agent.providers import provider_status
 
@@ -77,3 +78,26 @@ def health() -> dict[str, str]:
     status = {"status": "ok", **provider_status()}
     logger.info("health provider=%s model=%s", status["provider"], status["model"])
     return status
+
+
+@app.get("/ping")
+def ping() -> dict[str, str]:
+    # AgentCore Runtime HTTP contract. Keep /health for humans, /ping for the platform.
+    return {"status": "Healthy"}
+
+
+class InvocationRequest(BaseModel):
+    workflow_id: str | None = None
+
+
+@app.post("/invocations")
+def invoke(request: InvocationRequest) -> dict:
+    # v1: claim one due run, execute the deterministic placeholder flow.
+    # The real brain (Strands agent over the 6 tools) slots in here next.
+    from agent.dispatcher import claim_next
+    from agent.runner import execute_run
+
+    job, _envelope = claim_next(request.workflow_id)
+    if job is None:
+        return {"status": "empty", "detail": "No due workflows."}
+    return execute_run(job)

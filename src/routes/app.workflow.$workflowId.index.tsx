@@ -3,13 +3,13 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDashboard } from "../components/dashboard-layout";
 import { StatusPill, SkillList } from "../components/dashboard/goal-card";
 import { PERMISSION_GROUPS, deleteWorkflow, loadWorkflow, loadWorkflowRuns, updateWorkflowStatus } from "../components/dashboard/goal-persistence";
-import { PauseIcon, PlayIcon, ReRunIcon, TrashIcon } from "../components/dashboard/icons";
+import { PauseIcon, PlayIcon, ReRunIcon, TrashIcon, ChevronRightIcon } from "../components/dashboard/icons";
 import { fieldInputClass } from "../components/dashboard/goal-form";
 import { Tooltip } from "../components/tooltip";
 import { useToast } from "../components/toast";
 import type { Deployment, DeploymentStatus, RunStatus, WorkflowRun } from "../components/dashboard/types";
 
-export const Route = createFileRoute("/app/workflow/$workflowId")({
+export const Route = createFileRoute("/app/workflow/$workflowId/")({
   head: () => ({
     meta: [{ title: "xGoal — Workflow" }],
   }),
@@ -53,17 +53,6 @@ function formatDateTime(value: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-function formatDuration(run: WorkflowRun) {
-  if (!run.startedAt || !run.finishedAt) return "—";
-  const ms = new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime();
-  if (Number.isNaN(ms) || ms < 0) return "—";
-  const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return "< 1 min";
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m`;
 }
 
 function daysLeft(endsAt: string | null) {
@@ -410,21 +399,33 @@ function WorkflowDetailPage() {
           </section>
 
           <article className="rounded-3xl border border-line bg-white p-6 sm:p-7">
-            <h2 className="text-xl font-semibold tracking-[-0.04em]">Activity</h2>
+            <header className="flex items-start justify-between gap-4">
+              <h2 className="text-xl font-semibold tracking-[-0.04em]">Activity</h2>
+              {runs.length > 0 ? (
+                <Link
+                  to="/app/workflow/$workflowId/activities"
+                  params={{ workflowId: workflow.id }}
+                  className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-muted transition-colors hover:text-ink"
+                >
+                  View all <ChevronRightIcon />
+                </Link>
+              ) : null}
+            </header>
             {runs.length === 0 ? (
               <p className="mt-2 text-sm leading-6 text-muted">
                 No runs recorded yet. Each attempt this workflow makes will appear here with its outcome.
               </p>
             ) : (
-              <ul className="mt-5 divide-y divide-line border-y border-line">
+              <ul className="mt-5 divide-y divide-line">
                 {runs.map((run) => (
                   <li key={run.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3.5 text-sm">
                     <RunStatusPill status={run.status} />
-                    <span className="min-w-40 flex-1 text-muted">
+                    <span className="min-w-40 flex-1 text-xs tabular-nums text-muted">
                       {formatDateTime(run.startedAt)}
-                      {run.finishedAt ? ` → ${formatDateTime(run.finishedAt)}` : ""}
                     </span>
-                    <span className="text-xs tabular-nums text-muted">{formatDuration(run)}</span>
+                    {run.resultSummary ? (
+                      <span className="w-full text-xs leading-5 text-muted">{run.resultSummary}</span>
+                    ) : null}
                     {run.errorMessage ? (
                       <span className="w-full text-xs leading-5 text-red-700">{run.errorMessage}</span>
                     ) : null}

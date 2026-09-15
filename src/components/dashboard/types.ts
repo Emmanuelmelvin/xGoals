@@ -26,6 +26,7 @@ export type WorkflowRun = {
   startedAt: string | null;
   finishedAt: string | null;
   errorMessage: string | null;
+  resultSummary: string | null;
 };
 
 export type Milestone = {
@@ -111,6 +112,31 @@ export type NotificationItem = {
   body: string;
   link: string | null;
   readAt: string | null;
+  createdAt: string;
+};
+
+export type DraftKind = "post" | "reply" | "repost" | "dm" | "article" | "block" | "mute" | "follow" | "like" | "bookmark";
+
+export type DraftStatus = "draft" | "approved" | "rejected" | "published" | "failed" | "archived";
+
+export type DraftItem = {
+  id: string;
+  goalId: string;
+  workflowId: string;
+  runId: string | null;
+  kind: DraftKind;
+  status: DraftStatus;
+  content: string;
+  payload: Record<string, unknown>;
+  reasoning: string;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
+export type DraftComment = {
+  id: string;
+  draftId: string;
+  body: string;
   createdAt: string;
 };
 

@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Lock,
   LogOut,
+  MessageCircle,
   Milestone,
   PanelLeft,
   Pause,
@@ -57,6 +58,7 @@ export const BranchPlusIcon = withLucideDefaults(GitBranchPlus, "size-4");
 export const GlobeIcon = withLucideDefaults(Globe, "size-4");
 export const LockIcon = withLucideDefaults(Lock, "size-4");
 export const MilestoneIcon = withLucideDefaults(Milestone, "size-4");
+export const MessageIcon = withLucideDefaults(MessageCircle, "size-4");
 export const ClockIcon = withLucideDefaults(Clock, "size-4");
 export const PauseIcon = withLucideDefaults(Pause, "size-4");
 export const PlayIcon = withLucideDefaults(Play, "size-4");

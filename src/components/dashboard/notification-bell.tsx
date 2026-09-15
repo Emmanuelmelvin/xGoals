@@ -97,7 +97,7 @@ export function NotificationBell({ ownerId }: { ownerId: string }) {
         >
           <BellIcon />
           {unreadCount > 0 ? (
-            <span className="absolute right-2 top-2 grid min-h-5 min-w-5 place-items-center rounded-full bg-blue px-1 text-[0.65rem] font-bold tabular-nums text-white" aria-hidden="true">
+            <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-blue px-1 text-[0.65rem] font-bold tabular-nums text-white ring-2 ring-paper" aria-hidden="true">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           ) : null}
@@ -107,7 +107,7 @@ export function NotificationBell({ ownerId }: { ownerId: string }) {
         <div
           role="menu"
           aria-label="Notifications"
-          className="absolute right-0 top-full z-30 mt-2 max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-line bg-white shadow-xl"
+          className="absolute right-0 top-full z-30 mt-2 max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-line bg-white shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <div className="sticky top-0 flex items-center justify-between gap-3 bg-white px-4 py-3">
             <p className="text-sm font-bold">Notifications</p>

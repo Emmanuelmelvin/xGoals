@@ -184,7 +184,7 @@ export async function loadWorkflowRuns({ ownerId, workflowId }: { ownerId: strin
   const supabase = createClient();
   const { data, error } = await supabase
     .from("workflow_runs")
-    .select("id,status,started_at,finished_at,error_message")
+    .select("id,status,started_at,finished_at,error_message,result_summary")
     .eq("owner_id", ownerId)
     .eq("workflow_id", workflowId)
     .order("created_at", { ascending: false });
@@ -198,6 +198,7 @@ export async function loadWorkflowRuns({ ownerId, workflowId }: { ownerId: strin
       startedAt: typeof row.started_at === "string" ? row.started_at : null,
       finishedAt: typeof row.finished_at === "string" ? row.finished_at : null,
       errorMessage: typeof row.error_message === "string" && row.error_message ? row.error_message : null,
+      resultSummary: typeof row.result_summary === "string" && row.result_summary ? row.result_summary : null,
     })),
     error: null,
   };

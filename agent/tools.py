@@ -51,6 +51,7 @@ MAX_TITLE_CHARS = 160
 MAX_BODY_CHARS = 2_000
 MAX_LINK_CHARS = 500
 MAX_NOTE_CHARS = 280
+MAX_FEEDBACK_ITEMS = 20
 
 
 def _db_url() -> str:
@@ -294,7 +295,37 @@ def build_tools(job: JobContext) -> list:
         logger.info("credit_spent amount=%s owner=%s", amount, job.owner_id)
         return {"spent": amount, "balance": balance - amount}
 
-    return [load_job_context, save_draft, complete_milestone, record_run_result, send_notification, log_credit_spend]
+    @tool
+    def read_feedback(limit: int = 10) -> dict:
+        """Read the owner's recent comments across this workflow's drafts — steering input for THIS run ('too formal', 'more like #3'). Feedback overrides house style; quote which note you honored in your run summary."""
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1 or limit > MAX_FEEDBACK_ITEMS:
+            raise ValueError(f"limit must be 1–{MAX_FEEDBACK_ITEMS}.")
+
+        with _connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                select c.body as body, c.created_at as created_at, d.kind as kind
+                from public.draft_comments as c
+                join public.drafts as d on d.id = c.draft_id
+                where d.workflow_id = %s and d.owner_id = %s
+                order by c.created_at desc
+                limit %s
+                """,
+                (job.workflow_id, job.owner_id, limit),
+            )
+            rows = cur.fetchmany(limit) if hasattr(cur, "fetchmany") else (cur.fetchall() or [])[:limit]
+            notes = [
+                {
+                    "body": str(row.get("body", ""))[:MAX_BODY_CHARS],
+                    "on": row.get("kind"),
+                    "at": row.get("created_at"),
+                }
+                for row in (rows or [])
+            ]
+        logger.info("feedback_read count=%s workflow=%s", len(notes), job.workflow_id)
+        return {"notes": notes}
+
+    return [load_job_context, save_draft, complete_milestone, record_run_result, send_notification, log_credit_spend, read_feedback]
 
 
-TOOL_NAMES = ("load_job_context", "save_draft", "complete_milestone", "record_run_result", "send_notification", "log_credit_spend")
+TOOL_NAMES = ("load_job_context", "save_draft", "complete_milestone", "record_run_result", "send_notification", "log_credit_spend", "read_feedback")

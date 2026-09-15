@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppCreditsRouteImport } from './routes/app.credits'
 import { Route as AppGoalsRouteImport } from './routes/app.goals'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppWorkflowRouteImport } from './routes/app.workflow'
 import { Route as AppWorkflowsRouteImport } from './routes/app.workflows'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as GoalsIndexRouteImport } from './routes/goals.index'
@@ -23,10 +24,11 @@ import { Route as ApiBachsWebhookRouteImport } from './routes/api.bachs.webhook'
 import { Route as AppGoalsIndexRouteImport } from './routes/app.goals.index'
 import { Route as AppGoalsGoalIdRouteImport } from './routes/app.goals.$goalId'
 import { Route as AppGoalsNewRouteImport } from './routes/app.goals.new'
-import { Route as AppWorkflowWorkflowIdRouteImport } from './routes/app.workflow.$workflowId'
 import { Route as AppWorkflowsIndexRouteImport } from './routes/app.workflows.index'
 import { Route as AppWorkflowsNewRouteImport } from './routes/app.workflows.new'
 import { Route as AppGoalsBranchGoalIdRouteImport } from './routes/app.goals.branch.$goalId'
+import { Route as AppWorkflowWorkflowIdIndexRouteImport } from './routes/app.workflow.$workflowId.index'
+import { Route as AppWorkflowWorkflowIdActivitiesRouteImport } from './routes/app.workflow.$workflowId.activities'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -56,6 +58,11 @@ const AppGoalsRoute = AppGoalsRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkflowRoute = AppWorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
   getParentRoute: () => AppRoute,
 } as any)
 const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
@@ -98,11 +105,6 @@ const AppGoalsNewRoute = AppGoalsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppGoalsRoute,
 } as any)
-const AppWorkflowWorkflowIdRoute = AppWorkflowWorkflowIdRouteImport.update({
-  id: '/workflow/$workflowId',
-  path: '/workflow/$workflowId',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppWorkflowsIndexRoute = AppWorkflowsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -118,6 +120,18 @@ const AppGoalsBranchGoalIdRoute = AppGoalsBranchGoalIdRouteImport.update({
   path: '/branch/$goalId',
   getParentRoute: () => AppGoalsRoute,
 } as any)
+const AppWorkflowWorkflowIdIndexRoute =
+  AppWorkflowWorkflowIdIndexRouteImport.update({
+    id: '/$workflowId/',
+    path: '/$workflowId/',
+    getParentRoute: () => AppWorkflowRoute,
+  } as any)
+const AppWorkflowWorkflowIdActivitiesRoute =
+  AppWorkflowWorkflowIdActivitiesRouteImport.update({
+    id: '/$workflowId/activities',
+    path: '/$workflowId/activities',
+    getParentRoute: () => AppWorkflowRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -125,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
+  '/app/workflow': typeof AppWorkflowRouteWithChildren
   '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/goals/$goalId': typeof GoalsGoalIdRoute
@@ -133,16 +148,18 @@ export interface FileRoutesByFullPath {
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
-  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals/': typeof AppGoalsIndexRoute
   '/app/workflows/': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
+  '/app/workflow/$workflowId/activities': typeof AppWorkflowWorkflowIdActivitiesRoute
+  '/app/workflow/$workflowId/': typeof AppWorkflowWorkflowIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/credits': typeof AppCreditsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/workflow': typeof AppWorkflowRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/goals/$goalId': typeof GoalsGoalIdRoute
   '/app': typeof AppIndexRoute
@@ -150,11 +167,12 @@ export interface FileRoutesByTo {
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
-  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals': typeof AppGoalsIndexRoute
   '/app/workflows': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
+  '/app/workflow/$workflowId/activities': typeof AppWorkflowWorkflowIdActivitiesRoute
+  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -163,6 +181,7 @@ export interface FileRoutesById {
   '/app/credits': typeof AppCreditsRoute
   '/app/goals': typeof AppGoalsRouteWithChildren
   '/app/profile': typeof AppProfileRoute
+  '/app/workflow': typeof AppWorkflowRouteWithChildren
   '/app/workflows': typeof AppWorkflowsRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/goals/$goalId': typeof GoalsGoalIdRoute
@@ -171,11 +190,12 @@ export interface FileRoutesById {
   '/api/bachs/webhook': typeof ApiBachsWebhookRoute
   '/app/goals/$goalId': typeof AppGoalsGoalIdRoute
   '/app/goals/new': typeof AppGoalsNewRoute
-  '/app/workflow/$workflowId': typeof AppWorkflowWorkflowIdRoute
   '/app/workflows/new': typeof AppWorkflowsNewRoute
   '/app/goals/': typeof AppGoalsIndexRoute
   '/app/workflows/': typeof AppWorkflowsIndexRoute
   '/app/goals/branch/$goalId': typeof AppGoalsBranchGoalIdRoute
+  '/app/workflow/$workflowId/activities': typeof AppWorkflowWorkflowIdActivitiesRoute
+  '/app/workflow/$workflowId/': typeof AppWorkflowWorkflowIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -185,6 +205,7 @@ export interface FileRouteTypes {
     | '/app/credits'
     | '/app/goals'
     | '/app/profile'
+    | '/app/workflow'
     | '/app/workflows'
     | '/auth/callback'
     | '/goals/$goalId'
@@ -193,16 +214,18 @@ export interface FileRouteTypes {
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
-    | '/app/workflow/$workflowId'
     | '/app/workflows/new'
     | '/app/goals/'
     | '/app/workflows/'
     | '/app/goals/branch/$goalId'
+    | '/app/workflow/$workflowId/activities'
+    | '/app/workflow/$workflowId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app/credits'
     | '/app/profile'
+    | '/app/workflow'
     | '/auth/callback'
     | '/goals/$goalId'
     | '/app'
@@ -210,11 +233,12 @@ export interface FileRouteTypes {
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
-    | '/app/workflow/$workflowId'
     | '/app/workflows/new'
     | '/app/goals'
     | '/app/workflows'
     | '/app/goals/branch/$goalId'
+    | '/app/workflow/$workflowId/activities'
+    | '/app/workflow/$workflowId'
   id:
     | '__root__'
     | '/'
@@ -222,6 +246,7 @@ export interface FileRouteTypes {
     | '/app/credits'
     | '/app/goals'
     | '/app/profile'
+    | '/app/workflow'
     | '/app/workflows'
     | '/auth/callback'
     | '/goals/$goalId'
@@ -230,11 +255,12 @@ export interface FileRouteTypes {
     | '/api/bachs/webhook'
     | '/app/goals/$goalId'
     | '/app/goals/new'
-    | '/app/workflow/$workflowId'
     | '/app/workflows/new'
     | '/app/goals/'
     | '/app/workflows/'
     | '/app/goals/branch/$goalId'
+    | '/app/workflow/$workflowId/activities'
+    | '/app/workflow/$workflowId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workflow': {
+      id: '/app/workflow'
+      path: '/workflow'
+      fullPath: '/app/workflow'
+      preLoaderRoute: typeof AppWorkflowRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/workflows': {
@@ -346,13 +379,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsNewRouteImport
       parentRoute: typeof AppGoalsRoute
     }
-    '/app/workflow/$workflowId': {
-      id: '/app/workflow/$workflowId'
-      path: '/workflow/$workflowId'
-      fullPath: '/app/workflow/$workflowId'
-      preLoaderRoute: typeof AppWorkflowWorkflowIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/workflows/': {
       id: '/app/workflows/'
       path: '/'
@@ -373,6 +399,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/goals/branch/$goalId'
       preLoaderRoute: typeof AppGoalsBranchGoalIdRouteImport
       parentRoute: typeof AppGoalsRoute
+    }
+    '/app/workflow/$workflowId/': {
+      id: '/app/workflow/$workflowId/'
+      path: '/$workflowId'
+      fullPath: '/app/workflow/$workflowId/'
+      preLoaderRoute: typeof AppWorkflowWorkflowIdIndexRouteImport
+      parentRoute: typeof AppWorkflowRoute
+    }
+    '/app/workflow/$workflowId/activities': {
+      id: '/app/workflow/$workflowId/activities'
+      path: '/$workflowId/activities'
+      fullPath: '/app/workflow/$workflowId/activities'
+      preLoaderRoute: typeof AppWorkflowWorkflowIdActivitiesRouteImport
+      parentRoute: typeof AppWorkflowRoute
     }
   }
 }
@@ -395,6 +435,20 @@ const AppGoalsRouteWithChildren = AppGoalsRoute._addFileChildren(
   AppGoalsRouteChildren,
 )
 
+interface AppWorkflowRouteChildren {
+  AppWorkflowWorkflowIdActivitiesRoute: typeof AppWorkflowWorkflowIdActivitiesRoute
+  AppWorkflowWorkflowIdIndexRoute: typeof AppWorkflowWorkflowIdIndexRoute
+}
+
+const AppWorkflowRouteChildren: AppWorkflowRouteChildren = {
+  AppWorkflowWorkflowIdActivitiesRoute: AppWorkflowWorkflowIdActivitiesRoute,
+  AppWorkflowWorkflowIdIndexRoute: AppWorkflowWorkflowIdIndexRoute,
+}
+
+const AppWorkflowRouteWithChildren = AppWorkflowRoute._addFileChildren(
+  AppWorkflowRouteChildren,
+)
+
 interface AppWorkflowsRouteChildren {
   AppWorkflowsNewRoute: typeof AppWorkflowsNewRoute
   AppWorkflowsIndexRoute: typeof AppWorkflowsIndexRoute
@@ -413,18 +467,18 @@ interface AppRouteChildren {
   AppCreditsRoute: typeof AppCreditsRoute
   AppGoalsRoute: typeof AppGoalsRouteWithChildren
   AppProfileRoute: typeof AppProfileRoute
+  AppWorkflowRoute: typeof AppWorkflowRouteWithChildren
   AppWorkflowsRoute: typeof AppWorkflowsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
-  AppWorkflowWorkflowIdRoute: typeof AppWorkflowWorkflowIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCreditsRoute: AppCreditsRoute,
   AppGoalsRoute: AppGoalsRouteWithChildren,
   AppProfileRoute: AppProfileRoute,
+  AppWorkflowRoute: AppWorkflowRouteWithChildren,
   AppWorkflowsRoute: AppWorkflowsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
-  AppWorkflowWorkflowIdRoute: AppWorkflowWorkflowIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
