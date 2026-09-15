@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import os
 import sys
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -52,6 +54,40 @@ ALLOWED_PERMISSIONS = {
 
 
 app = FastAPI(title="xGoal Agent", version="0.1.0")
+
+
+async def _poll_loop() -> None:
+    # Regular heartbeat: claim one due run per tick so feedback and scheduled
+    # work get picked up without manual POSTs. Empty ticks cost nothing
+    # (no claim = no spend). Manual POST /invocations still works — the
+    # atomic claim means a poll tick and a manual call can never double-run.
+    interval = float(os.getenv("AGENT_POLL_INTERVAL_SEC", "60"))
+    while True:
+        try:
+            from agent.dispatcher import claim_next
+            from agent.runner import execute_run
+
+            job, _envelope = await asyncio.to_thread(claim_next, None)
+            if job is not None:
+                result = await asyncio.to_thread(execute_run, job)
+                logger.info("poll_run finished status=%s run=%s", result.get("status"), job.run_id)
+        except Exception:
+            logger.exception("poll_tick_failed")
+        await asyncio.sleep(max(interval, 5))
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    task: asyncio.Task | None = None
+    if os.getenv("AGENT_POLL_ENABLED", "true").strip().lower() not in ("0", "false", "no", "off"):
+        task = asyncio.create_task(_poll_loop())
+        logger.info("poll_loop started interval=%ss", os.getenv("AGENT_POLL_INTERVAL_SEC", "60"))
+    yield
+    if task is not None:
+        task.cancel()
+
+
+app.router.lifespan_context = _lifespan
 
 
 @app.middleware("http")

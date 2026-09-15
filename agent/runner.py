@@ -25,9 +25,9 @@ def execute_run(job: JobContext) -> dict:
     result: dict = {"run_id": job.run_id, "workflow_id": job.workflow_id}
 
     try:
-        balance = tools["log_credit_spend"](amount=1, note=f"run {job.run_id[:8]}")
         feedback = tools["read_feedback"]()
         feedback_count = len((feedback or {}).get("notes") or [])
+        balance = tools["log_credit_spend"](amount=1, note=f"run {job.run_id[:8]}")
 
         milestones = context.get("milestones") or []
         pending = next((m for m in milestones if not m.get("completed")), None)
