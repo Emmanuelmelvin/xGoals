@@ -4,10 +4,10 @@ import { useDashboard } from "../components/dashboard-layout";
 import { fieldInputClass, PermissionSwitch } from "../components/dashboard/goal-form";
 import { PERMISSION_GROUPS, createDeployment, loadGoalPermissions, loadPermissionsForPublicGoal, loadPublicGoal } from "../components/dashboard/goal-persistence";
 import { ArrowLeftIcon } from "../components/dashboard/icons";
-import { SelectDropdown } from "../components/dropdown";
+import { SelectDropdown, useDropdown } from "../components/dropdown";
 import { useToast } from "../components/toast";
 import type { Goal, PublicGoal } from "../components/dashboard/types";
-import { DateTimePicker, addDays, formatDateLong, roundUpToNextHour, startOfDay } from "../components/dashboard/schedule-picker";
+import { addDays, formatDateLong, formatDateTimeLong, isSameDay, roundUpToNextHour, startOfDay } from "../components/dashboard/schedule-picker";
 
 export const Route = createFileRoute("/app/workflows/new")({
   validateSearch: (search: Record<string, unknown>): { goal?: string; drawer?: "open" | "closed" } => ({
@@ -26,6 +26,234 @@ const permissionLabels = new Map(
 
 const QUICK_LENGTHS = [7, 14, 30] as const;
 
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+const QUICK_TIMES = ["09:00", "12:00", "17:00"] as const;
+
+function toTimeInputValue(date: Date): string {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function applyTime(base: Date, timeValue: string): Date | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(timeValue);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+  const next = new Date(base);
+  next.setHours(hours, minutes, 0, 0);
+  return next;
+}
+
+function DateTimePopover({ id, label, hint, value, onChange, minDate, disabled, error, defaultTime = "09:00", placeholder = "Pick date & time" }: { id: string; label: string; hint?: string; value: Date | null; onChange: (next: Date | null) => void; minDate?: Date | null; disabled?: boolean; error?: string | null; defaultTime?: string; placeholder?: string }) {
+  const { open, closeMenu, toggleMenu, containerRef } = useDropdown();
+  const [step, setStep] = useState<"date" | "time">("date");
+  const initialView = value ?? minDate ?? new Date();
+  const [viewYear, setViewYear] = useState(initialView.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialView.getMonth());
+
+  useEffect(() => {
+    if (!open) return;
+    setStep("date");
+    const base = value ?? minDate ?? new Date();
+    setViewYear(base.getFullYear());
+    setViewMonth(base.getMonth());
+  }, [open ]);
+
+  const minDay = minDate ? startOfDay(minDate) : null;
+  const maxDay = startOfDay(addDays(new Date(), 365));
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startOffset = firstOfMonth.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (Date | null)[] = [
+    ...Array.from({ length: startOffset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => new Date(viewYear, viewMonth, index + 1)),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const prevDisabled =
+    !!disabled || (!!minDay && (viewYear < minDay.getFullYear() || (viewYear === minDay.getFullYear() && viewMonth <= minDay.getMonth())));
+  const nextDisabled =
+    !!disabled || (viewYear > maxDay.getFullYear() || (viewYear === maxDay.getFullYear() && viewMonth >= maxDay.getMonth()));
+
+  function goMonth(delta: -1 | 1) {
+    if (delta === -1 && prevDisabled) return;
+    if (delta === 1 && nextDisabled) return;
+    const next = new Date(viewYear, viewMonth + delta, 1);
+    setViewYear(next.getFullYear());
+    setViewMonth(next.getMonth());
+  }
+
+  function isDayDisabled(day: Date): boolean {
+    const dayStart = startOfDay(day);
+    if (minDay && dayStart < minDay) return true;
+    if (dayStart > maxDay) return true;
+    return false;
+  }
+
+  function pickDay(day: Date) {
+    if (isDayDisabled(day)) return;
+    const base = value && isSameDay(value, day) ? value : (applyTime(day, value ? toTimeInputValue(value) : defaultTime) ?? day);
+    const next = new Date(day);
+    next.setHours(base.getHours(), base.getMinutes(), 0, 0);
+    onChange(next);
+    setStep("time");
+  }
+
+  function handleTimeChange(timeValue: string) {
+    const base = value ?? new Date(viewYear, viewMonth, Math.min(new Date().getDate(), daysInMonth));
+    const next = applyTime(base, timeValue);
+    if (next) onChange(next);
+  }
+
+  const timeValue = value ? toTimeInputValue(value) : "";
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={toggleMenu}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        disabled={disabled}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <span className="text-sm font-semibold">
+          {value ? formatDateTimeLong(value) : placeholder}
+        </span>
+        <span aria-hidden="true" className="text-xs text-muted">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && !disabled ? (
+        <div
+          role="dialog"
+          aria-label={`${label} calendar`}
+          className="absolute bottom-full left-0 z-30 mb-2 w-[300px] max-w-[calc(100vw-3rem)] overflow-hidden rounded-2xl border border-line bg-white shadow-xl"
+        >
+          {step === "date" ? (
+            <div className="p-3">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => goMonth(-1)}
+                  disabled={prevDisabled}
+                  aria-label="Previous month"
+                  className="grid size-8 place-items-center rounded-lg border border-line text-sm font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted"
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <p className="text-sm font-bold" aria-live="polite">{monthLabel}</p>
+                <button
+                  type="button"
+                  onClick={() => goMonth(1)}
+                  disabled={nextDisabled}
+                  aria-label="Next month"
+                  className="grid size-8 place-items-center rounded-lg border border-line text-sm font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-muted"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+              {hint ? <p className="mt-1.5 text-xs leading-5 text-muted">{hint}</p> : null}
+              <div role="grid" aria-label={`${label} — ${monthLabel}`} className="mt-2">
+                <div role="row" className="grid grid-cols-7 gap-0.5">
+                  {WEEKDAYS.map((day) => (
+                    <span key={day} role="columnheader" className="py-1 text-center text-[0.65rem] font-bold uppercase tracking-wide text-muted">
+                      {day}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-0.5 grid grid-cols-7 gap-0.5">
+                  {cells.map((day, index) => {
+                    if (!day) return <span key={`empty-${index}`} className="size-8" aria-hidden="true" />;
+                    const selected = !!value && isSameDay(value, day);
+                    const isToday = isSameDay(day, new Date());
+                    const dayDisabled = isDayDisabled(day);
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        type="button"
+                        role="gridcell"
+                        aria-selected={selected}
+                        aria-label={day.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                        disabled={dayDisabled}
+                        onClick={() => pickDay(day)}
+                        className={`grid size-8 place-items-center rounded-lg text-[0.8125rem] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue ${
+                          selected
+                            ? "bg-blue text-white hover:bg-blue-dark"
+                            : dayDisabled
+                              ? "cursor-not-allowed text-line"
+                              : "text-ink hover:bg-blue-pale"
+                        } ${!selected && isToday ? "ring-1 ring-inset ring-blue/40" : ""}`}
+                      >
+                        {day.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {error ? (
+                <p role="alert" className="mt-2 text-xs font-semibold leading-5 text-red-700">{error}</p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="p-4">
+              <p className="text-sm font-semibold">
+                {value ? value.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "Pick a time"}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted">What time should it {id === "workflow-from" ? "start" : "end"}?</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {QUICK_TIMES.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => handleTimeChange(preset)}
+                    aria-pressed={timeValue === preset}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold tabular-nums transition-colors ${timeValue === preset ? "border-blue bg-blue text-white" : "border-line text-muted hover:border-ink hover:text-ink"}`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+              <label htmlFor={`${id}-time`} className="mt-3 block">
+                <span className="text-xs font-semibold text-muted">Time</span>
+                <input
+                  id={`${id}-time`}
+                  type="time"
+                  value={timeValue}
+                  onChange={(event) => handleTimeChange(event.target.value)}
+                  className={`${fieldInputClass} mt-1.5 tabular-nums`}
+                />
+              </label>
+              {error ? (
+                <p role="alert" className="mt-2 text-xs font-semibold leading-5 text-red-700">{error}</p>
+              ) : null}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStep("date")}
+                  className="rounded-xl px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-wash hover:text-ink"
+                >
+                  ← Date
+                </button>
+                <button
+                  type="button"
+                  onClick={closeMenu}
+                  disabled={!value}
+                  className="flex-1 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function NewWorkflowPage() {
   const { goal: goalParam, drawer } = Route.useSearch();
   const { user, goals, isGoalsLoading, refreshGoals } = useDashboard();
@@ -38,7 +266,8 @@ function NewWorkflowPage() {
   const [nameTouched, setNameTouched] = useState(false);
   const [included, setIncluded] = useState<string[]>([]);
   const [scopeTouched, setScopeTouched] = useState(false);
-  const [startsAt, setStartsAt] = useState<Date | null>(() => roundUpToNextHour(new Date()));
+  const [startMode, setStartMode] = useState<"now" | "schedule">("now");
+  const [scheduledStart, setScheduledStart] = useState<Date | null>(() => roundUpToNextHour(new Date()));
   const [endsAtDate, setEndsAtDate] = useState<Date | null>(() => addDays(roundUpToNextHour(new Date()), 14));
   const [isIndefinite, setIsIndefinite] = useState(false);
   const [inheritedPermissions, setInheritedPermissions] = useState<string[]>([]);
@@ -116,47 +345,53 @@ function NewWorkflowPage() {
   }
 
   const scheduleError = useMemo(() => {
-    if (!startsAt) return "Pick a start date and time.";
+    if (startMode === "schedule" && !scheduledStart) return "Pick a start date and time.";
     if (isIndefinite) return null;
     if (!endsAtDate) return "Pick an end date and time.";
-    if (endsAtDate.getTime() <= startsAt.getTime()) return "The end needs to be after the start.";
+    const startBase = startMode === "now" ? new Date() : scheduledStart;
+    if (startBase && endsAtDate.getTime() <= startBase.getTime()) return "The end needs to be after the start.";
     return null;
-  }, [startsAt, endsAtDate, isIndefinite]);
+  }, [startMode, scheduledStart, endsAtDate, isIndefinite]);
 
   const runLengthDays = useMemo(() => {
-    if (isIndefinite || !startsAt || !endsAtDate) return null;
-    const diffMs = endsAtDate.getTime() - startsAt.getTime();
+    if (isIndefinite || !endsAtDate) return null;
+    const startBase = startMode === "now" ? new Date() : scheduledStart;
+    if (!startBase) return null;
+    const diffMs = endsAtDate.getTime() - startBase.getTime();
     if (diffMs <= 0) return null;
     return Math.max(1, Math.ceil(diffMs / 86_400_000));
-  }, [startsAt, endsAtDate, isIndefinite]);
+  }, [startMode, scheduledStart, endsAtDate, isIndefinite]);
 
   const canSave =
-    !!selectedGoal && name.trim().length > 0 && included.length > 0 && !!startsAt && !scheduleError;
+    !!selectedGoal && name.trim().length > 0 && included.length > 0 && (startMode === "now" || !!scheduledStart) && !scheduleError;
 
-  function handleStartsAtChange(next: Date | null) {
-    setStartsAt(next);
+  function handleScheduledStartChange(next: Date | null) {
+    setScheduledStart(next);
     if (next && endsAtDate && endsAtDate.getTime() <= next.getTime()) {
       setEndsAtDate(addDays(next, 1));
     }
   }
 
   function applyQuickLength(days: number) {
-    if (!startsAt) return;
+    const base = startMode === "now" ? new Date() : scheduledStart;
+    if (!base) return;
     setIsIndefinite(false);
-    setEndsAtDate(addDays(startsAt, days));
+    setEndsAtDate(addDays(base, days));
   }
 
   function handleIndefiniteChange(next: boolean) {
     setIsIndefinite(next);
-    if (!next && startsAt && endsAtDate && endsAtDate.getTime() <= startsAt.getTime()) {
-      setEndsAtDate(addDays(startsAt, 1));
+    const base = startMode === "now" ? new Date() : scheduledStart;
+    if (!next && base && endsAtDate && endsAtDate.getTime() <= base.getTime()) {
+      setEndsAtDate(addDays(base, 1));
     }
   }
 
   async function handleDeploy() {
     if (isSaving || !selectedGoal) return;
     const cleanName = name.trim();
-    if (!cleanName || included.length === 0 || !startsAt || scheduleError) {
+    const deployStart = startMode === "now" ? new Date() : scheduledStart;
+    if (!cleanName || included.length === 0 || !deployStart || scheduleError) {
       toast.error("Pick a goal, name the run, and keep at least one milestone in scope.", {
         description: scheduleError ?? undefined,
       });
@@ -173,7 +408,7 @@ function NewWorkflowPage() {
         permissions: inheritedPermissions,
         runLengthDays,
         endsAt: isIndefinite || !endsAtDate ? null : endsAtDate.toISOString(),
-        startsAt: startsAt.toISOString(),
+        startsAt: deployStart.toISOString(),
       });
       if (!id || error) {
         toast.error("The workflow could not be deployed.", { description: error ?? undefined });
@@ -314,7 +549,7 @@ function NewWorkflowPage() {
             <section>
               <h2 className="text-sm font-semibold">When should it run?</h2>
               <p className="mt-1 text-xs leading-5 text-muted">
-                Pick a start and an end — date and time. The run length is calculated for you.
+                Start now or schedule it — then set the end. The run length is calculated for you.
               </p>
             </section>
             <section className="flex shrink-0 items-center gap-2.5">
@@ -327,50 +562,97 @@ function NewWorkflowPage() {
             </section>
           </header>
 
-          <section className="mt-4 flex flex-col gap-4 lg:flex-row">
-            <DateTimePicker
-              id="workflow-from"
-              label="From"
-              hint="When the run window opens."
-              value={startsAt}
-              onChange={handleStartsAtChange}
-              minDate={startOfDay(new Date())}
-              defaultTime="09:00"
-            />
-            <DateTimePicker
-              id="workflow-to"
-              label="To"
-              hint={isIndefinite ? "Disabled while indefinite is on." : "When the run window closes."}
-              value={isIndefinite ? null : endsAtDate}
-              onChange={setEndsAtDate}
-              minDate={startsAt ?? startOfDay(new Date())}
-              disabled={isIndefinite}
-              error={isIndefinite ? null : scheduleError}
-              defaultTime="17:00"
-            />
-          </section>
+          <div className="relative mt-6 pl-8">
+            <ol className="space-y-6">
+              <li className="relative">
+                <span aria-hidden="true" className="absolute -left-5 -bottom-6 top-7 w-px bg-line" />
+                <span aria-hidden="true" className={`absolute -left-8 top-1 grid size-6 place-items-center rounded-full border text-[0.65rem] font-bold ${startMode === "now" ? "border-blue bg-blue text-white" : "border-line bg-white text-muted"}`}>
+                  {startMode === "now" ? "●" : "○"}
+                </span>
+                <p className="text-sm font-semibold">From</p>
+                <div className="mt-2 inline-flex rounded-full border border-line bg-wash p-1" role="group" aria-label="Start mode">
+                  {(["now", "schedule"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setStartMode(mode)}
+                      aria-pressed={startMode === mode}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${startMode === mode ? "bg-ink text-white" : "text-muted hover:text-ink"}`}
+                    >
+                      {mode === "now" ? "Now" : "Schedule"}
+                    </button>
+                  ))}
+                </div>
+                {startMode === "now" ? (
+                  <p className="mt-2 text-xs leading-5 text-muted">Starts immediately when you deploy.</p>
+                ) : (
+                  <div className="mt-2">
+                    <DateTimePopover
+                      id="workflow-from"
+                      label="Start"
+                      hint="When the run window opens."
+                      value={scheduledStart}
+                      onChange={handleScheduledStartChange}
+                      minDate={startOfDay(new Date())}
+                      defaultTime="09:00"
+                    />
+                  </div>
+                )}
+              </li>
 
-          <section className="mt-4 flex flex-wrap items-center gap-2" aria-label="Quick run lengths">
-            <span className="text-xs font-semibold text-muted">Quick:</span>
-            {QUICK_LENGTHS.map((days) => (
-              <button
-                key={days}
-                type="button"
-                onClick={() => applyQuickLength(days)}
-                disabled={!startsAt}
-                className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {days} days
-              </button>
-            ))}
-          </section>
+              <li className="relative">
+                <span aria-hidden="true" className="absolute -left-8 top-1 grid size-6 place-items-center rounded-full border border-line bg-white text-[0.65rem] font-bold text-muted">
+                  ○
+                </span>
+                <p className="text-sm font-semibold">To</p>
+                {isIndefinite ? (
+                  <p className="mt-2 text-xs leading-5 text-muted">Runs until you stop it.</p>
+                ) : (
+                  <div className="mt-2">
+                    <DateTimePopover
+                      id="workflow-to"
+                      label="End"
+                      hint="When the run window closes."
+                      value={endsAtDate}
+                      onChange={setEndsAtDate}
+                      minDate={startMode === "now" ? startOfDay(new Date()) : (scheduledStart ?? startOfDay(new Date()))}
+                      error={scheduleError}
+                      defaultTime="17:00"
+                    />
+                  </div>
+                )}
+                <section className="mt-3 flex flex-wrap items-center gap-2" aria-label="Quick run lengths">
+                  <span className="text-xs font-semibold text-muted">Quick:</span>
+                  {QUICK_LENGTHS.map((days) => (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => applyQuickLength(days)}
+                      disabled={startMode === "schedule" && !scheduledStart}
+                      className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-muted transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {days} days
+                    </button>
+                  ))}
+                </section>
+              </li>
+            </ol>
+          </div>
 
-          <p className="mt-3 text-xs leading-5 text-muted" aria-live="polite">
-            {isIndefinite || !startsAt
-              ? "Runs until you stop it."
-              : !endsAtDate || !runLengthDays
-                ? "Pick an end after the start."
-                : `${runLengthDays} day${runLengthDays === 1 ? "" : "s"} · ${formatDateLong(startsAt)} → ${formatDateLong(endsAtDate)}.`}
+          <p className="mt-5 text-xs leading-5 text-muted" aria-live="polite">
+            {isIndefinite
+              ? startMode === "now"
+                ? "Starts now · runs until you stop it."
+                : scheduledStart
+                  ? `Starts ${formatDateLong(scheduledStart)} · runs until you stop it.`
+                  : "Runs until you stop it."
+              : startMode === "now"
+                ? !endsAtDate || !runLengthDays
+                  ? "Pick an end after now."
+                  : `${runLengthDays} day${runLengthDays === 1 ? "" : "s"} · Now → ${formatDateLong(endsAtDate)}.`
+                : !scheduledStart || !endsAtDate || !runLengthDays
+                  ? "Pick a start and an end."
+                  : `${runLengthDays} day${runLengthDays === 1 ? "" : "s"} · ${formatDateLong(scheduledStart)} → ${formatDateLong(endsAtDate)}.`}
           </p>
         </section>
 
